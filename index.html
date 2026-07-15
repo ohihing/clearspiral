@@ -9,8 +9,10 @@
   <!-- 📊 구글 애널리틱스(GA4) 연동 위치 -->
   <!-- ======================================================= -->
 
-  <!-- 폰트 및 프레임워크 -->
+  <!-- 기본 폰트(고딕) 및 띠지용 명조체(Noto Serif KR) 동시 로드 -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@700&display=swap" rel="stylesheet">
+  
   <script src="https://cdn.tailwindcss.com"></script>
   
   <!-- Tailwind CSS 폰트 강제 설정 -->
@@ -69,7 +71,7 @@
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
     // ==========================================
-    // 마케터님 파이어베이스 서버 설정
+    // 파이어베이스 서버 설정
     // ==========================================
     let userFirebaseConfig = {
         apiKey: "AIzaSyDzJRBlj8u-96l6kQdLv2O5x-3Hq4MEn7w",
@@ -89,7 +91,7 @@
     const db = getFirestore(app);
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'event-helix-official';
     
-    // 부적절 금지어 사전 (마케터님 리스트 적용 및 공백 트리밍)
+    // 부적절 금지어 사전
     const RAW_BAD_WORDS = ['일베', '개새끼', '개새기', '시발럼', '씨발', '좆', '조까', '좆까', '시팔', '씨팔', '썅놈', 'nigger', '오줌', 'ㅅㅂㄹ', 'ㅅㅂㄴ', 'ㅅㅂ', 'ㅅㅍ', '씹새끼', '씹놈', '병신', '등신', '븅신', '미췬넘', '호로새끼', ' 시발새끼', '181819', '븅딱', '애미', '애미나이', '자지', '보지', '꼬추', '똥꼬', '섹스', 'sex', '성행위', '족까', '좃', '시1발', '씨1발', '씨1팔', '좆1까', '미1친', '노무노무', '노무', '젖', '유방', '이기야', '창녀', '창년', '아가리', '떡치', 'x끼', 'x발', 'x팔', '뒤져라', '응디', '쓰벌', '좌빨', '극우', '베충', '종북', '내란', '국힘', '민주당', '이재명', '재매이햄', '문재앙', '문재인', '이명박', '박근혜', ' 박정희', '전두환', '전땅크', 'ㅈ같이', '음란', '대깨문', '조센징', '쪽빠리', '쪽빨이', '조센진', '왜놈', '양키', '흑형', '니거', '성폭행', '성추행', '강간', '윤간', '공산당', '존나', 'ㅈㄴ', '틀딱', '돼지년', '짭새', '쥐박이', '지랄', '쥐랄', '짱깨', '성괴', '젼나', '쑤레기', '18년'];
     const BAD_WORDS = RAW_BAD_WORDS.map(word => word.trim());
 
@@ -110,7 +112,8 @@
         chevronsRight: <><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></>,
         users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
         mousePointer: <><path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="m13 13 6 6"/></>,
-        alertCircle: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>
+        alertCircle: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>,
+        eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>
       };
       return (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
@@ -135,13 +138,40 @@
       });
     }
 
+    // --- 📚 도서 표지 띠지 렌더링 전용 컴포넌트 ---
+    function BookCoverPreviewUI({ content }) {
+      return (
+        <div className="relative w-full max-w-[240px] mx-auto shadow-lg border border-gray-200 bg-white">
+          <img src="book_copy.jpg" alt="도서 표지 띠지 미리보기" className="w-full h-auto block" 
+               onError={(e) => { 
+                 e.target.style.display='none'; 
+                 e.target.insertAdjacentHTML('afterend', '<div class="w-full aspect-[2/3] bg-gray-200 flex items-center justify-center text-xs text-gray-500">book_copy.jpg 오류</div>'); 
+               }} />
+          
+          <div className="absolute bottom-0 left-0 w-full h-[26%] flex items-center justify-center px-4">
+            <p 
+              className="font-bold text-center leading-[1.4] tracking-tight"
+              style={{
+                fontFamily: "'Noto Serif KR', serif", 
+                color: '#0A1931', 
+                wordBreak: 'keep-all', 
+                fontSize: content?.length > 16 ? '13px' : '15px'
+              }}
+            >
+              {content || "이곳에 띠지 카피가 노출됩니다."}
+            </p>
+          </div>
+        </div>
+      );
+    }
+
     // ==========================================
     // 메인 앱 구조 시작
     // ==========================================
     function App() {
       const [user, setUser] = useState(null);
       const [entries, setEntries] = useState([]);
-      const [bannedList, setBannedList] = useState([]); // {id, email} 형태로 저장
+      const [bannedList, setBannedList] = useState([]); 
       
       const [currentView, setCurrentView] = useState('home');
       const [isAdminAuth, setIsAdminAuth] = useState(false);
@@ -283,12 +313,14 @@
     // 1. Home View (메인)
     // ==========================================
     function HomeView({ setView, entries, toggleLike, trackStoreClick }) {
-      useReveal(); // 스크롤 애니메이션 훅 적용
+      useReveal(); 
       const images = [{ id: 1, src: "001.jpg" }, { id: 2, src: "002.jpg" }, { id: 3, src: "003.jpg" }];
       const [currentSlide, setCurrentSlide] = useState(0);
       const [isDragging, setIsDragging] = useState(false);
       const [dragOffset, setDragOffset] = useState(0);
-      const [sortType, setSortType] = useState('recent'); // 최신순 기본
+      const [sortType, setSortType] = useState('recent'); 
+      const [previewModalContent, setPreviewModalContent] = useState(null); 
+
       const startX = useRef(0);
       const autoPlayRef = useRef(null);
 
@@ -371,7 +403,15 @@
               {topEntries.length === 0 ? (
                 <div className="text-center text-sm text-gray-400 py-12">아직 응모작이 없습니다.</div>
               ) : (
-                topEntries.map((entry, idx) => <EntryRow key={entry.id} entry={entry} toggleLike={toggleLike} rank={sortType === 'likes' ? null : idx + 1} />)
+                topEntries.map((entry, idx) => (
+                  <EntryRow 
+                    key={entry.id} 
+                    entry={entry} 
+                    toggleLike={toggleLike} 
+                    rank={sortType === 'likes' ? null : idx + 1} 
+                    onPreview={(content) => setPreviewModalContent(content)} 
+                  />
+                ))
               )}
             </div>
           </div>
@@ -384,11 +424,22 @@
               <BookStoreSquare storeId="yes24" img="ci_yes24.png" url="https://www.yes24.com/product/goods/193807963" name="예스24" trackStoreClick={trackStoreClick} />
             </div>
           </div>
+
+          {previewModalContent && (
+            <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
+              <div className="bg-white p-6 rounded-2xl shadow-2xl relative w-full max-w-[320px] animate-in zoom-in-95">
+                 <button onClick={() => setPreviewModalContent(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><Icon name="x" size={24}/></button>
+                 <h3 className="font-bold text-center text-[#0A1931] mb-6 text-[16px] tracking-tight">띠지 적용 가상 미리보기</h3>
+                 <BookCoverPreviewUI content={previewModalContent} />
+              </div>
+            </div>
+          )}
+
         </div>
       );
     }
 
-    function EntryRow({ entry, toggleLike, rank }) {
+    function EntryRow({ entry, toggleLike, rank, onPreview }) {
       const [isLiked, setIsLiked] = useState(!!localStorage.getItem(`liked_${entry.id}`));
       const [animate, setAnimate] = useState(false);
 
@@ -427,7 +478,12 @@
             </div>
             <p className="text-[#333] text-[15px] leading-[1.6] break-keep font-medium tracking-tight">{entry.content}</p>
             
-            <div className="mt-3">
+            <div className="mt-3 flex items-center gap-3">
+              {onPreview && (
+                <button onClick={() => onPreview(entry.content)} className="text-[10px] font-bold text-[#0A1931] bg-blue-50 px-2 py-1 rounded-md hover:bg-blue-100 smooth-transition flex items-center gap-1">
+                  <Icon name="eye" size={12} /> 표지 미리보기
+                </button>
+              )}
               <button onClick={handleReportClick} className="text-[10px] font-bold text-gray-400 hover:text-red-500 smooth-transition flex items-center gap-1">
                 <Icon name="alertCircle" size={12} /> 신고
               </button>
@@ -564,20 +620,26 @@
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6 reveal">
+            
+            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 mb-8">
+               <h4 className="text-[12px] font-bold text-gray-500 mb-4 text-center tracking-wide">내 카피 가상 적용 미리보기</h4>
+               <BookCoverPreviewUI content={form.content} />
+            </div>
+
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-[12px] font-bold text-gray-800 mb-2">닉네임 <span className="text-gray-400 font-normal ml-1">(최대 8자)</span></label>
-                <input type="text" name="nickname" value={form.nickname} onChange={handleChange} placeholder="예: 유카와" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
+                <input type="text" name="nickname" value={form.nickname} onChange={handleChange} placeholder="예: 유카와" className="w-full p-4 bg-white border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
               </div>
               <div className="w-[110px]">
                 <label className="block text-[12px] font-bold text-gray-800 mb-2">비밀번호</label>
-                <input type="password" name="password" value={form.password} onChange={handleChange} placeholder="숫자 4자리" maxLength="4" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none tracking-widest text-center focus:border-[#0A1931] smooth-transition" />
+                <input type="password" name="password" value={form.password} onChange={handleChange} placeholder="숫자 4자리" maxLength="4" className="w-full p-4 bg-white border border-gray-200 rounded-none text-[14px] outline-none tracking-widest text-center focus:border-[#0A1931] smooth-transition" />
               </div>
             </div>
 
             <div>
               <label className="block text-[12px] font-bold text-gray-800 mb-2">연락받을 이메일 주소</label>
-              <input type="email" name="email" value={form.email} onChange={handleChange} onBlur={handleEmailBlur} placeholder="이메일 주소 입력" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
+              <input type="email" name="email" value={form.email} onChange={handleChange} onBlur={handleEmailBlur} placeholder="이메일 주소 입력" className="w-full p-4 bg-white border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
             </div>
 
             <div>
@@ -585,7 +647,7 @@
                 <label className="block text-[12px] font-bold text-gray-800">응모 카피 내용</label>
                 <span className={`text-[11px] font-bold ${form.content.length >= 30 ? 'text-red-500' : 'text-gray-400'}`}>{form.content.length} / 30자</span>
               </div>
-              <textarea name="content" value={form.content} onChange={handleChange} placeholder="소설의 매력을 담은 한 줄을 적어주세요." rows="3" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[15px] leading-relaxed outline-none focus:border-[#0A1931] smooth-transition resize-none" />
+              <textarea name="content" value={form.content} onChange={handleChange} placeholder="소설의 매력을 담은 한 줄을 적어주세요." rows="3" className="w-full p-4 bg-white border border-gray-200 rounded-none text-[15px] leading-relaxed outline-none focus:border-[#0A1931] smooth-transition resize-none" />
             </div>
 
             <div className="pt-4">
@@ -611,15 +673,17 @@
     // ==========================================
     function ListView({ entries, user, toggleLike }) {
       useReveal();
-      const [sortType, setSortType] = useState('recent'); // 최신순 기본
+      const [sortType, setSortType] = useState('recent'); 
       const [currentPage, setCurrentPage] = useState(1);
       const [isModalOpen, setIsModalOpen] = useState(false);
+      const [previewModalContent, setPreviewModalContent] = useState(null);
       
       const itemsPerPage = 10;
-      const pagesPerBlock = 5; // 5개 단위 페이지네이션
+      const pagesPerBlock = 5; 
       
       const sortedEntries = useMemo(() => {
         const validEntries = [...entries].filter(e => (e.reports || 0) < 10);
+        
         if (sortType === 'likes') validEntries.sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt);
         else validEntries.sort((a, b) => b.createdAt - a.createdAt);
         return validEntries;
@@ -628,7 +692,6 @@
       const totalPages = Math.ceil(sortedEntries.length / itemsPerPage) || 1;
       const currentItems = sortedEntries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-      // 페이지네이션 5페이지 블록 계산 로직
       const currentBlock = Math.ceil(currentPage / pagesPerBlock);
       const startPage = (currentBlock - 1) * pagesPerBlock + 1;
       const endPage = Math.min(startPage + pagesPerBlock - 1, totalPages);
@@ -660,7 +723,15 @@
 
           <div className="flex flex-col mb-10 border-b border-gray-100 reveal">
             {currentItems.length === 0 ? <div className="text-center text-sm text-gray-400 py-16">작성된 글이 없습니다.</div>
-              : currentItems.map((entry, idx) => <EntryRow key={entry.id} entry={entry} toggleLike={toggleLike} rank={sortType === 'likes' ? null : (currentPage - 1) * itemsPerPage + idx + 1} />)
+              : currentItems.map((entry, idx) => (
+                  <EntryRow 
+                    key={entry.id} 
+                    entry={entry} 
+                    toggleLike={toggleLike} 
+                    rank={sortType === 'likes' ? null : (currentPage - 1) * itemsPerPage + idx + 1}
+                    onPreview={(content) => setPreviewModalContent(content)} 
+                  />
+                ))
             }
           </div>
 
@@ -679,6 +750,16 @@
           )}
 
           {isModalOpen && <MyPostModal entries={entries} onClose={() => setIsModalOpen(false)} />}
+
+          {previewModalContent && (
+            <div className="fixed inset-0 z-[120] bg-black/60 backdrop-blur-sm flex items-center justify-center p-6 animate-in fade-in duration-200">
+              <div className="bg-white p-6 rounded-2xl shadow-2xl relative w-full max-w-[320px] animate-in zoom-in-95">
+                 <button onClick={() => setPreviewModalContent(null)} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><Icon name="x" size={24}/></button>
+                 <h3 className="font-bold text-center text-[#0A1931] mb-6 text-[16px] tracking-tight">띠지 적용 가상 미리보기</h3>
+                 <BookCoverPreviewUI content={previewModalContent} />
+              </div>
+            </div>
+          )}
         </div>
       );
     }
@@ -790,7 +871,7 @@
     }
 
     // ==========================================
-    // 6. Admin View (관리자 대시보드 - 차단 관리 추가)
+    // 6. Admin View (관리자 대시보드)
     // ==========================================
     function AdminView({ entries, bannedList, isAdminAuth, setIsAdminAuth, appId, db, user }) {
       const [passwordInput, setPasswordInput] = useState('');
@@ -860,7 +941,6 @@
         setBanInput(''); alert('차단 완료');
       };
 
-      // 차단 해제 로직 (bannedList 배열을 활용)
       const handleUnban = async (banId, email) => {
         if(window.confirm(`[${email}] 계정의 차단을 해제하시겠습니까?`)) {
           await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_banned', banId));
@@ -929,7 +1009,6 @@
               <button onClick={manualBan} className="bg-red-500 text-white px-4 font-bold text-[13px]">차단</button>
             </div>
             
-            {/* 차단된 이메일 리스트 출력 */}
             {bannedList.length > 0 && (
               <div className="mt-4 pt-4 border-t border-gray-100">
                 <h4 className="text-[11px] font-bold text-gray-500 mb-3">차단된 이메일 목록 ({bannedList.length}건)</h4>
