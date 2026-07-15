@@ -160,12 +160,10 @@
         return () => window.removeEventListener('hashchange', checkHash);
       }, []);
 
-      // 하트(공감) 즉각 반응 로직을 위해 파라미터 구조 변경
       const toggleLike = async (id, isCurrentlyLiked) => {
         if (!user) return;
         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', id);
         try {
-          // increment 기능을 통해 여러 명이 눌러도 누락되지 않게 처리
           if (isCurrentlyLiked) {
             await updateDoc(docRef, { likes: increment(-1) });
           } else {
@@ -176,7 +174,8 @@
 
       const trackStoreClick = async (storeName) => {
         if (!user) return;
-        const metricsRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_metrics');
+        // 하얀 화면 버그 수정: 6개의 인자(문서까지)를 정확히 지정하도록 'store_clicks' 추가
+        const metricsRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_metrics', 'store_clicks');
         try {
           await setDoc(metricsRef, { [storeName]: increment(1) }, { merge: true });
         } catch (err) { console.error("Click tracking failed:", err); }
@@ -303,7 +302,6 @@
         startAutoPlay();
       };
 
-      // 블라인드(신고 누적) 처리된 항목 제외 및 정렬
       const topEntries = useMemo(() => {
         const arr = [...entries].filter(e => (e.reports || 0) < 10);
         if (sortType === 'likes') arr.sort((a,b) => b.likes - a.likes || b.createdAt - a.createdAt);
@@ -369,14 +367,12 @@
       );
     }
 
-    // --- 즉각 반응형(Optimistic UI) 및 신고 기능이 탑재된 로우 컴포넌트 ---
     function EntryRow({ entry, toggleLike }) {
       const [isLiked, setIsLiked] = useState(!!localStorage.getItem(`liked_${entry.id}`));
       const [animate, setAnimate] = useState(false);
 
       const handleLikeClick = () => {
         const currentlyLiked = isLiked;
-        // 1. 화면의 색상/상태를 즉시 변경하여 조작 쾌적성 극대화
         setIsLiked(!currentlyLiked);
         if (!currentlyLiked) { 
           setAnimate(true); 
@@ -385,7 +381,6 @@
         } else {
           localStorage.removeItem(`liked_${entry.id}`);
         }
-        // 2. 서버 통신은 백그라운드에서 실행
         toggleLike(entry.id, currentlyLiked);
       };
 
@@ -408,7 +403,6 @@
             <div className="flex items-center gap-2 mb-2">
               <span className="font-bold text-gray-800 text-[13px]">{entry.nickname}</span>
             </div>
-            {/* 따옴표 제거됨 */}
             <p className="text-[#333] text-[15px] leading-[1.6] break-keep font-medium tracking-tight">{entry.content}</p>
             
             <div className="mt-3">
@@ -419,7 +413,6 @@
           </div>
           <button onClick={handleLikeClick} className="flex flex-col items-center justify-center min-w-[48px] pt-1">
             <Icon name="heart" size={20} fill={isLiked ? "currentColor" : "none"} className={`${isLiked ? 'text-[#0A1931]' : 'text-gray-300'} ${animate ? 'animate-heart' : ''} mb-1 smooth-transition`} />
-            {/* 숫자는 서버 스냅샷을 따르지만 딜레이가 짧아 이질감이 없습니다 */}
             <span className={`text-[11px] font-bold ${isLiked ? 'text-[#0A1931]' : 'text-gray-400'}`}>{entry.likes || 0}</span>
           </button>
         </div>
@@ -783,7 +776,7 @@
 
       useEffect(() => {
         if (!user) return;
-        const metricsRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_metrics');
+        const metricsRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_metrics', 'store_clicks');
         const unsub = onSnapshot(metricsRef, (docSnap) => {
           if (docSnap.exists()) {
             setStoreClicks({
