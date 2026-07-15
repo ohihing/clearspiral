@@ -11,15 +11,14 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
-    /* 폰트 호환성 강화 */
-    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+    /* 폰트 호환성 강화 (Windows 크롬 완벽 대응) */
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
     
     body, html {
-      /* Pretendard 우선 적용 후, 윈도우/맥 기본 폰트로 안전하게 넘어감 */
-      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Malgun Gothic", "Apple SD Gothic Neo", sans-serif;
+      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", sans-serif;
       -ms-overflow-style: none; 
       scrollbar-width: none; 
-      background-color: #FFFFFF; /* 완전 흰색 배경으로 매거진 느낌 부여 */
+      background-color: #FFFFFF; 
     }
     body::-webkit-scrollbar, .hide-scroll::-webkit-scrollbar {
       display: none;
@@ -33,12 +32,6 @@
     }
     .animate-heart { animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .smooth-transition { transition: all 0.3s ease; }
-
-    /* 메뉴 오버레이 애니메이션 */
-    .menu-enter { opacity: 0; transform: translateY(-10px); }
-    .menu-enter-active { opacity: 1; transform: translateY(0); transition: opacity 300ms, transform 300ms; }
-    .menu-exit { opacity: 1; transform: translateY(0); }
-    .menu-exit-active { opacity: 0; transform: translateY(-10px); transition: opacity 300ms, transform 300ms; }
   </style>
 </head>
 <body>
@@ -52,7 +45,7 @@
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
     // ==========================================
-    // 💡 마케터님 설정: 복사하신 파이어베이스 키를 여기에 넣으세요!
+    // 마케터님 서버 설정 (자동 기입됨)
     // ==========================================
     let userFirebaseConfig = {
         apiKey: "AIzaSyDzJRBlj8u-96l6kQdLv2O5x-3Hq4MEn7w",
@@ -71,7 +64,7 @@
     const auth = getAuth(app);
     const db = getFirestore(app);
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'event-helix-official';
-    const BAD_WORDS = ['바보', '멍청이', '일베', '음담패설', '시발', '씨발', '개새끼', '개새기'];
+    const BAD_WORDS = ['파맛첵스', '바보', '멍청이', '일베', '음담패설'];
 
     // --- 아이콘 컴포넌트 ---
     const Icon = ({ name, size = 24, className = "", fill = "none" }) => {
@@ -106,7 +99,7 @@
       
       const [currentView, setCurrentView] = useState('home');
       const [isAdminAuth, setIsAdminAuth] = useState(false);
-      const [isMenuOpen, setIsMenuOpen] = useState(false); // 햄버거 메뉴 상태
+      const [isMenuOpen, setIsMenuOpen] = useState(false);
 
       useEffect(() => {
         const initAuth = async () => {
@@ -166,41 +159,46 @@
 
       return (
         <div className="min-h-screen font-sans text-gray-900 flex justify-center bg-gray-100 hide-scroll">
-          {/* 전체 컨테이너 (모바일 폭 제한) */}
           <div className="w-full max-w-md bg-white min-h-screen relative shadow-2xl flex flex-col">
             
-            {/* 고정 헤더 (Sticky) & 로고, 햄버거 메뉴 */}
-            <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 h-16 flex items-center justify-between px-5">
-              <div className="w-8"></div> {/* 여백 밸런스 */}
-              <button onClick={() => handleNavClick('home')} className="flex items-center justify-center cursor-pointer">
-                <img src="booklogo.png" alt="투명한 나선" className="h-8 object-contain" onError={(e) => { e.target.style.display='none'; e.target.insertAdjacentHTML('afterend', '<span class="font-bold text-xl tracking-tighter text-[#0A1931]">투명한 나선</span>'); }} />
+            {/* 고정 헤더: 좌측 버거메뉴, 중앙 로고 */}
+            <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-md border-b border-gray-100 h-16 flex items-center justify-between px-4">
+              <button onClick={() => setIsMenuOpen(true)} className="w-10 h-10 flex items-center justify-center text-gray-800 hover:text-[#0A1931] smooth-transition">
+                <Icon name="menu" size={26} />
               </button>
-              <button onClick={() => setIsMenuOpen(true)} className="w-8 h-8 flex items-center justify-end text-gray-800 hover:text-blue-900 smooth-transition">
-                <Icon name="menu" size={28} />
+              
+              <button onClick={() => handleNavClick('home')} className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center cursor-pointer">
+                <img src="booklogo.png" alt="투명한 나선" className="h-7 object-contain" onError={(e) => { e.target.style.display='none'; e.target.insertAdjacentHTML('afterend', '<span class="font-bold text-lg tracking-tighter text-[#0A1931]">투명한 나선</span>'); }} />
               </button>
+              
+              <div className="w-10"></div> {/* 중앙 정렬용 여백 */}
             </header>
 
-            {/* 풀스크린 오버레이 메뉴 */}
+            {/* 좌측 사이드바 메뉴 (반투명 블러 백그라운드) */}
             {isMenuOpen && (
-              <div className="fixed inset-0 z-[100] bg-white flex flex-col animate-in fade-in duration-200">
-                <div className="h-16 flex items-center justify-between px-5 border-b border-gray-100">
-                  <div className="w-8"></div>
-                  <img src="booklogo.png" alt="투명한 나선" className="h-8 object-contain" onError={(e) => { e.target.style.display='none'; e.target.insertAdjacentHTML('afterend', '<span class="font-bold text-xl tracking-tighter text-[#0A1931]">투명한 나선</span>'); }} />
-                  <button onClick={() => setIsMenuOpen(false)} className="w-8 h-8 flex items-center justify-end text-gray-800">
-                    <Icon name="x" size={28} />
-                  </button>
+              <>
+                <div 
+                  className="fixed inset-0 z-[100] bg-black/40 backdrop-blur-sm animate-in fade-in duration-300" 
+                  onClick={() => setIsMenuOpen(false)}
+                ></div>
+                <div className="fixed top-0 left-0 bottom-0 w-[260px] bg-white z-[101] shadow-[10px_0_30px_rgba(0,0,0,0.1)] flex flex-col animate-in slide-in-from-left duration-300">
+                  <div className="h-16 flex items-center justify-between px-4 border-b border-gray-100">
+                    <img src="booklogo.png" alt="로고" className="h-6 object-contain ml-2" onError={(e) => e.target.style.display='none'} />
+                    <button onClick={() => setIsMenuOpen(false)} className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-800">
+                      <Icon name="x" size={24} />
+                    </button>
+                  </div>
+                  <div className="flex flex-col p-6 space-y-6 mt-4">
+                    <SidebarLink label="홈" view="home" current={currentView} onClick={handleNavClick} />
+                    <SidebarLink label="이벤트 안내" view="info" current={currentView} onClick={handleNavClick} />
+                    <SidebarLink label="참여하기" view="participate" current={currentView} onClick={handleNavClick} />
+                    <SidebarLink label="공모작 보기" view="list" current={currentView} onClick={handleNavClick} />
+                    <SidebarLink label="도서 안내" view="book" current={currentView} onClick={handleNavClick} />
+                  </div>
                 </div>
-                <div className="flex flex-col p-8 space-y-8 text-center mt-10">
-                  <MenuLink label="홈" view="home" current={currentView} onClick={handleNavClick} />
-                  <MenuLink label="이벤트 안내" view="info" current={currentView} onClick={handleNavClick} />
-                  <MenuLink label="참여하기" view="participate" current={currentView} onClick={handleNavClick} />
-                  <MenuLink label="공모작 모두 보기" view="list" current={currentView} onClick={handleNavClick} />
-                  <MenuLink label="도서 안내" view="book" current={currentView} onClick={handleNavClick} />
-                </div>
-              </div>
+              </>
             )}
 
-            {/* 메인 뷰 렌더링 */}
             <main className="flex-grow flex flex-col relative z-10">
               {currentView === 'home' && <HomeView setView={setCurrentView} entries={entries} toggleLike={toggleLike} />}
               {currentView === 'info' && <InfoView />}
@@ -210,12 +208,12 @@
               {currentView === 'admin' && <AdminView entries={entries} isAdminAuth={isAdminAuth} setIsAdminAuth={setIsAdminAuth} />}
             </main>
 
-            {/* 미니멀 푸터 */}
-            <footer className="mt-12 bg-white py-8 flex flex-col items-center border-t border-gray-100">
+            {/* 축소된 푸터 */}
+            <footer className="mt-8 bg-white py-6 flex flex-col items-center border-t border-gray-100">
               <AdminHiddenTrigger setView={setCurrentView}>
-                <img src="bi_vookda.png" alt="출판사 로고" className="h-5 object-contain opacity-50 grayscale" onError={(e) => { e.target.style.display='none'; e.target.insertAdjacentHTML('afterend', '<span class="text-xs font-bold text-gray-400">VOOKDA</span>'); }} />
+                <img src="bi_vookda.png" alt="출판사 로고" className="h-4 object-contain opacity-30 pointer-events-none" onError={(e) => { e.target.style.display='none'; }} />
               </AdminHiddenTrigger>
-              <p className="mt-3 text-[10px] text-gray-400 font-medium">© 2026 VOOKDA. All rights reserved.</p>
+              <p className="mt-2 text-[10px] text-gray-300 font-medium">© 2026 VOOKDA. All rights reserved.</p>
             </footer>
 
           </div>
@@ -223,13 +221,12 @@
       );
     }
 
-    // --- 오버레이 메뉴용 텍스트 링크 ---
-    function MenuLink({ label, view, current, onClick }) {
+    function SidebarLink({ label, view, current, onClick }) {
       const active = current === view;
       return (
         <button 
           onClick={() => onClick(view)} 
-          className={`text-2xl font-bold tracking-tight smooth-transition ${active ? 'text-[#0A1931]' : 'text-gray-400 hover:text-gray-800'}`}
+          className={`text-left text-[17px] font-bold tracking-tight smooth-transition ${active ? 'text-[#0A1931]' : 'text-gray-400 hover:text-gray-800'}`}
         >
           {label}
         </button>
@@ -242,7 +239,7 @@
         setClicks(c => c + 1);
         if (clicks + 1 >= 5) { setView('admin'); setClicks(0); }
       };
-      return <div onClick={handleClick} className="cursor-default select-none">{children}</div>;
+      return <div onClick={handleClick} className="cursor-default select-none pt-2 px-6">{children}</div>;
     }
 
     // ==========================================
@@ -292,13 +289,12 @@
       return (
         <div className="animate-in fade-in duration-500">
           
-          {/* 타이틀 영역 (1줄, 가운데 정렬) */}
-          <div className="pt-10 pb-8 px-6 text-center border-b border-gray-100 bg-white">
-            <h1 className="text-[20px] font-bold text-[#0A1931] tracking-tight whitespace-nowrap">&lt;투명한 나선&gt; 카피 공모전</h1>
-            <p className="mt-3 text-[13px] text-gray-500 font-medium whitespace-nowrap">최고의 한 줄을 남기고 일본 니가타로 떠나보세요.</p>
+          {/* 간격이 조절된 1줄 텍스트 영역 */}
+          <div className="pt-6 pb-6 px-6 text-center bg-white">
+            <h1 className="text-[18px] font-bold text-[#0A1931] tracking-tight whitespace-nowrap">&lt;투명한 나선&gt; 카피 공모전</h1>
+            <p className="mt-2 text-[13px] text-gray-500 font-medium whitespace-nowrap">최고의 한 줄을 남기고 일본 니가타로 떠나보세요.</p>
           </div>
 
-          {/* 슬라이더 영역 (버튼 겹침 분리) */}
           <div className="relative w-full aspect-square overflow-hidden bg-gray-100"
                onMouseDown={onDragStart} onMouseMove={onDragMove} onMouseUp={onDragEnd} onMouseLeave={onDragEnd}
                onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd} style={{ touchAction: 'pan-y' }}>
@@ -309,7 +305,6 @@
                 </div>
               ))}
             </div>
-            {/* 슬라이더 페이징 닷 */}
             <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
               {images.map((_, idx) => (
                 <button key={idx} onClick={() => { setCurrentSlide(idx); startAutoPlay(); }} className={`h-1.5 rounded-none smooth-transition ${idx === currentSlide ? 'bg-white w-6' : 'bg-white/40 w-1.5'}`} />
@@ -317,20 +312,17 @@
             </div>
           </div>
 
-          {/* 참여하기 버튼 영역 (슬라이더 아래 독립 배치) */}
           <div className="px-6 py-6 border-b border-gray-100 bg-white">
             <button onClick={() => setView('participate')} className="w-full bg-[#0A1931] text-white py-4 font-bold text-[15px] shadow-sm hover:bg-[#1a2c4e] smooth-transition tracking-wide">
               이벤트 참여하기
             </button>
           </div>
 
-          {/* 주요 응모작 영역 (Editorial 리스트 스타일) */}
           <div className="px-6 py-10 border-b border-gray-100 bg-white">
             <div className="flex items-end justify-between mb-6">
               <h3 className="font-bold text-[16px] text-[#0A1931] tracking-tight">실시간 주요 응모작</h3>
               <button onClick={() => setView('list')} className="text-[12px] font-semibold text-gray-400 hover:text-[#0A1931] smooth-transition pb-0.5">전체보기</button>
             </div>
-            
             <div className="flex flex-col">
               {topEntries.length === 0 ? (
                 <div className="text-center text-sm text-gray-400 py-12 border-t border-gray-100">아직 응모작이 없습니다.</div>
@@ -340,20 +332,19 @@
             </div>
           </div>
 
-          {/* 도서 링크 영역 (라인 스타일) */}
           <div className="px-6 py-10 bg-white">
             <h3 className="font-bold text-[16px] text-[#0A1931] tracking-tight mb-6 text-center">도서 자세히 보기</h3>
-            <div className="flex flex-col gap-2">
-              <BookStoreRow img="ci_kyobo.png" url="https://product.kyobobook.co.kr/detail/S000220515357" name="교보문고" />
-              <BookStoreRow img="ci_yes24.png" url="https://www.yes24.com/product/goods/193807963" name="예스24" />
-              <BookStoreRow img="ci_aladin.png" url="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=398021172" name="알라딘" />
+            {/* 가로 3열 박스 레이아웃 */}
+            <div className="grid grid-cols-3 gap-3">
+              <BookStoreSquare img="ci_kyobo.png" url="https://product.kyobobook.co.kr/detail/S000220515357" name="교보문고" />
+              <BookStoreSquare img="ci_yes24.png" url="https://www.yes24.com/product/goods/193807963" name="예스24" />
+              <BookStoreSquare img="ci_aladin.png" url="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=398021172" name="알라딘" />
             </div>
           </div>
         </div>
       );
     }
 
-    // --- 에디토리얼 스타일 목록 컴포넌트 ---
     function EntryRow({ entry, rank, toggleLike }) {
       const isLiked = localStorage.getItem(`liked_${entry.id}`);
       const [animate, setAnimate] = useState(false);
@@ -380,11 +371,12 @@
       );
     }
 
-    function BookStoreRow({ img, url, name }) {
+    // --- 새로운 사각형 서점 버튼 컴포넌트 ---
+    function BookStoreSquare({ img, url, name }) {
       return (
-        <a href={url} target="_blank" rel="noreferrer" className="flex items-center justify-between py-4 border-b border-gray-100 hover:bg-gray-50/50 smooth-transition px-2 group">
-          <img src={img} alt={name} className="h-5 object-contain grayscale opacity-80 group-hover:grayscale-0 group-hover:opacity-100 smooth-transition" onError={(e) => { e.target.style.display='none'; e.target.insertAdjacentHTML('afterend', `<span class="text-[13px] font-bold text-gray-600">${name}</span>`); }} />
-          <Icon name="chevronRight" size={16} className="text-gray-300 group-hover:text-[#0A1931] smooth-transition" />
+        <a href={url} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center py-4 px-2 border border-gray-200 bg-white hover:border-[#0A1931] smooth-transition group">
+          <img src={img} alt={name} className="h-5 object-contain mb-3 grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 smooth-transition" onError={(e) => { e.target.style.display='none'; }} />
+          <span className="text-[11px] font-bold text-gray-500 group-hover:text-[#0A1931]">{name}</span>
         </a>
       );
     }
@@ -672,10 +664,11 @@
                 <p className="text-[14px] text-gray-600 leading-relaxed font-medium break-keep">"유카와 마나부, 너의 죄를 사하노라!"<br/><br/>갈릴레오 시리즈 최신작. 더욱 깊어진 미스터리와 감동이 소용돌이치는 걸작. 얽히고설킨 혈연과 인연의 비밀 속으로 초대합니다.</p>
              </div>
           </div>
-          <div className="flex flex-col border-t border-gray-100">
-            <BookStoreRow img="ci_kyobo.png" url="https://product.kyobobook.co.kr/detail/S000220515357" name="교보문고" />
-            <BookStoreRow img="ci_yes24.png" url="https://www.yes24.com/product/goods/193807963" name="예스24" />
-            <BookStoreRow img="ci_aladin.png" url="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=398021172" name="알라딘" />
+          
+          <div className="grid grid-cols-3 gap-3 border-t border-gray-100 pt-6">
+            <BookStoreSquare img="ci_kyobo.png" url="https://product.kyobobook.co.kr/detail/S000220515357" name="교보문고" />
+            <BookStoreSquare img="ci_yes24.png" url="https://www.yes24.com/product/goods/193807963" name="예스24" />
+            <BookStoreSquare img="ci_aladin.png" url="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=398021172" name="알라딘" />
           </div>
         </div>
       );
