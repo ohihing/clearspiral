@@ -86,7 +86,7 @@
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'event-helix-official';
     
     // 부적절 금지어 사전
-    const BAD_WORDS = ['일베', '똥', '개새끼', '개새기', '시발럼', '씨발', '좆', '조까', '좆까', '시팔', '씨팔', '썅놈', 'nigger', '오줌', 'ㅅㅂㄹ', 'ㅅㅂㄴ', 'ㅅㅂ', 'ㅅㅍ', '씹새끼', '씹놈', '병신', '등신', '븅신', '미췬넘', '호로새끼',' 시발새끼', '181819', '븅딱', '애미', '애미나이', '자지', '보지', '꼬추', '똥꼬', '섹스', 'sex', '성행위', '족까', '좃', '시1발', '씨1발', '씨1팔', '좆1까', '미1친', '노무노무', '노무', '젖', '유방', '이기야', '창녀', '창년', '아가리', '떡치', 'x끼', 'x발', 'x팔', '뒤져라', '응디', '쓰벌', '좌빨', '극우', '베충', '종북', '내란', '국힘', '민주당', '이재명', '재매이햄', '문재앙', '문재인', '이명박', '박근혜',' 박정희', '전두환', '전땅크', 'ㅈ같이', '음란', '대깨문', '조센징', '쪽빠리', '쪽빨이', '조센진', '왜놈', '양키', '흑형', '니거', '성폭행', '성추행', '강간', '윤간', '공산당', '존나', 'ㅈㄴ', '틀딱', '돼지년', '짭새', '쥐박이', '지랄', '쥐랄', '짱깨', '성괴', '젼나', '쑤레기', '18년'];
+    const BAD_WORDS = ['일베', '개새끼', '개새기', '시발럼', '씨발', '좆', '조까', '좆까', '시팔', '씨팔', '썅놈', 'nigger', '오줌', 'ㅅㅂㄹ', 'ㅅㅂㄴ', 'ㅅㅂ', 'ㅅㅍ', '씹새끼', '씹놈', '병신', '등신', '븅신', '미췬넘', '호로새끼',' 시발새끼', '181819', '븅딱', '애미', '애미나이', '자지', '보지', '꼬추', '똥꼬', '섹스', 'sex', '성행위', '족까', '좃', '시1발', '씨1발', '씨1팔', '좆1까', '미1친', '노무노무', '노무', '젖', '유방', '이기야', '창녀', '창년', '아가리', '떡치', 'x끼', 'x발', 'x팔', '뒤져라', '응디', '쓰벌', '좌빨', '극우', '베충', '종북', '내란', '국힘', '민주당', '이재명', '재매이햄', '문재앙', '문재인', '이명박', '박근혜',' 박정희', '전두환', '전땅크', 'ㅈ같이', '음란', '대깨문', '조센징', '쪽빠리', '쪽빨이', '조센진', '왜놈', '양키', '흑형', '니거', '성폭행', '성추행', '강간', '윤간', '공산당', '존나', 'ㅈㄴ', '틀딱', '돼지년', '짭새', '쥐박이', '지랄', '쥐랄', '짱깨', '성괴', '젼나', '쑤레기', '18년'];
 
     // --- 아이콘 컴포넌트 ---
     const Icon = ({ name, size = 24, className = "", fill = "none" }) => {
@@ -174,7 +174,6 @@
 
       const trackStoreClick = async (storeName) => {
         if (!user) return;
-        // 하얀 화면 버그 수정: 6개의 인자(문서까지)를 정확히 지정하도록 'store_clicks' 추가
         const metricsRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_metrics', 'store_clicks');
         try {
           await setDoc(metricsRef, { [storeName]: increment(1) }, { merge: true });
@@ -482,7 +481,18 @@
         const { name, value } = e.target;
         if (name === 'content' && value.length > 30) return;
         if (name === 'password' && value.length > 4) return;
+        // 닉네임 글자수 최대 8자로 제한
+        if (name === 'nickname' && value.length > 8) return;
         setForm(p => ({ ...p, [name]: value }));
+      };
+
+      // 이메일 입력칸에서 포커스가 벗어날 때 기존 닉네임 불러오기
+      const handleEmailBlur = () => {
+        if (!form.email) return;
+        const existingEntry = entries.find(ent => ent.email === form.email);
+        if (existingEntry) {
+          setForm(p => ({ ...p, nickname: existingEntry.nickname }));
+        }
       };
 
       const handleSubmit = async (e) => {
@@ -493,7 +503,22 @@
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return alert("올바른 이메일 형식을 입력해주세요.");
         if (bannedEmails.includes(form.email)) return alert("참여가 제한된 계정입니다.");
         if (entries.filter(ent => ent.email === form.email).length >= 3) return alert("최대 3번까지만 응모 가능합니다.");
-        if (BAD_WORDS.some(w => form.content.includes(w) || form.nickname.includes(w))) return alert("부적절한 단어가 포함되어 있습니다.");
+        
+        // 1. 비속어 필터링 (닉네임과 내용 분리하여 알림)
+        if (BAD_WORDS.some(w => form.nickname.includes(w))) return alert("닉네임에 부적절한 단어가 포함되어 있습니다.");
+        if (BAD_WORDS.some(w => form.content.includes(w))) return alert("응모 내용에 부적절한 단어가 포함되어 있습니다.");
+
+        // 2. 이메일-닉네임 일치 검증 (동일 이메일은 동일 닉네임만 허용)
+        const existingEmailEntry = entries.find(ent => ent.email === form.email);
+        if (existingEmailEntry && existingEmailEntry.nickname !== form.nickname) {
+          return alert(`동일한 이메일은 기존 닉네임(${existingEmailEntry.nickname})으로만 참여 가능합니다.`);
+        }
+
+        // 3. 닉네임 사칭 방지 검증 (다른 이메일이 선점한 닉네임 사용 불가)
+        const existingNicknameEntry = entries.find(ent => ent.nickname === form.nickname);
+        if (existingNicknameEntry && existingNicknameEntry.email !== form.email) {
+          return alert("이미 다른 분이 사용 중인 닉네임입니다. 다른 닉네임을 설정해주세요.");
+        }
 
         setLoading(true);
         try {
@@ -521,7 +546,7 @@
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="flex gap-4">
               <div className="flex-1">
-                <label className="block text-[12px] font-bold text-gray-800 mb-2">닉네임</label>
+                <label className="block text-[12px] font-bold text-gray-800 mb-2">닉네임 <span className="text-gray-400 font-normal ml-1">(최대 8자)</span></label>
                 <input type="text" name="nickname" value={form.nickname} onChange={handleChange} placeholder="예: 유카와" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
               </div>
               <div className="w-[110px]">
@@ -532,7 +557,8 @@
 
             <div>
               <label className="block text-[12px] font-bold text-gray-800 mb-2">연락받을 이메일 주소</label>
-              <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="이메일 주소 입력" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
+              {/* 이메일 포커스 아웃 시(onBlur) 기존 닉네임 연동 */}
+              <input type="email" name="email" value={form.email} onChange={handleChange} onBlur={handleEmailBlur} placeholder="이메일 주소 입력" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
             </div>
 
             <div>
@@ -547,7 +573,7 @@
               <ul className="text-[11px] text-gray-500 space-y-2 font-medium tracking-tight leading-relaxed">
                 <li>• 이메일 주소는 당첨 시 연락 수신이 가능한 주소로 입력해주세요.</li>
                 <li>• 당첨시 이메일 주소로 당첨 안내 메일이 발송됩니다.</li>
-                <li>• 한 개의 이메일 주소로 총 세 번 응모가 가능합니다.</li>
+                <li>• 한 개의 이메일 주소로 총 세 번 응모가 가능합니다. (기존 닉네임 연동)</li>
                 <li>• 입력한 이메일 주소는 관리자에게만 공개 됩니다.</li>
                 <li><strong className="text-red-500">• 부적절한 언어 및 타인을 비방하는 문구 사용 시, 관리자에 의해 삭제될 수 있습니다.</strong></li>
               </ul>
