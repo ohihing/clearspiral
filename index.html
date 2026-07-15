@@ -11,11 +11,11 @@
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
   <style>
-    /* 폰트 호환성 강화 (Windows 크롬 완벽 대응) */
-    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css");
+    /* 폰트 호환성 초강화 (Windows 크롬 오류 방지를 위해 가장 안정적인 Static 폰트 사용) */
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css");
     
     body, html {
-      font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", sans-serif;
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", sans-serif;
       -ms-overflow-style: none; 
       scrollbar-width: none; 
       background-color: #FFFFFF; 
@@ -289,13 +289,14 @@
       return (
         <div className="animate-in fade-in duration-500">
           
-          {/* 간격이 조절된 1줄 텍스트 영역 */}
-          <div className="pt-6 pb-6 px-6 text-center bg-white">
-            <h1 className="text-[18px] font-bold text-[#0A1931] tracking-tight whitespace-nowrap">&lt;투명한 나선&gt; 카피 공모전</h1>
-            <p className="mt-2 text-[13px] text-gray-500 font-medium whitespace-nowrap">최고의 한 줄을 남기고 일본 니가타로 떠나보세요.</p>
+          {/* 간격 조절 및 에디토리얼 스타일링 적용된 텍스트 영역 */}
+          <div className="pt-8 pb-5 px-6 text-center bg-white flex flex-col items-center">
+            <span className="inline-block px-2.5 py-1 mb-3 text-[10px] font-bold text-[#0A1931] bg-[#F0F2F5] rounded-sm tracking-widest">SPECIAL EVENT</span>
+            <h1 className="text-[22px] font-extrabold text-[#0A1931] tracking-tight whitespace-nowrap">&lt;투명한 나선&gt; 카피 공모전</h1>
+            <p className="mt-2.5 text-[14px] text-gray-500 font-medium whitespace-nowrap">최고의 한 줄을 남기고 일본 니가타로 떠나보세요.</p>
           </div>
 
-          <div className="relative w-full aspect-square overflow-hidden bg-gray-100"
+          <div className="relative w-full aspect-square overflow-hidden bg-gray-100 border-y border-gray-100"
                onMouseDown={onDragStart} onMouseMove={onDragMove} onMouseUp={onDragEnd} onMouseLeave={onDragEnd}
                onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd} style={{ touchAction: 'pan-y' }}>
             <div className="flex h-full w-full will-change-transform" style={{ transform: `translateX(calc(-${currentSlide * 100}% + ${dragOffset}px))`, transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)' }}>
@@ -334,7 +335,7 @@
 
           <div className="px-6 py-10 bg-white">
             <h3 className="font-bold text-[16px] text-[#0A1931] tracking-tight mb-6 text-center">도서 자세히 보기</h3>
-            {/* 가로 3열 박스 레이아웃 */}
+            {/* 가로 3열 박스 레이아웃 - 하단 서점명 텍스트 제거 */}
             <div className="grid grid-cols-3 gap-3">
               <BookStoreSquare img="ci_kyobo.png" url="https://product.kyobobook.co.kr/detail/S000220515357" name="교보문고" />
               <BookStoreSquare img="ci_yes24.png" url="https://www.yes24.com/product/goods/193807963" name="예스24" />
@@ -371,12 +372,11 @@
       );
     }
 
-    // --- 새로운 사각형 서점 버튼 컴포넌트 ---
+    // --- 서점명 텍스트가 제거된 사각형 서점 버튼 컴포넌트 ---
     function BookStoreSquare({ img, url, name }) {
       return (
-        <a href={url} target="_blank" rel="noreferrer" className="flex flex-col items-center justify-center py-4 px-2 border border-gray-200 bg-white hover:border-[#0A1931] smooth-transition group">
-          <img src={img} alt={name} className="h-5 object-contain mb-3 grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 smooth-transition" onError={(e) => { e.target.style.display='none'; }} />
-          <span className="text-[11px] font-bold text-gray-500 group-hover:text-[#0A1931]">{name}</span>
+        <a href={url} target="_blank" rel="noreferrer" className="flex items-center justify-center py-6 px-2 border border-gray-200 bg-white hover:border-[#0A1931] smooth-transition group">
+          <img src={img} alt={name} className="h-6 object-contain grayscale opacity-60 group-hover:grayscale-0 group-hover:opacity-100 smooth-transition" onError={(e) => { e.target.style.display='none'; }} />
         </a>
       );
     }
@@ -400,21 +400,30 @@
           <div>
             <h3 className="font-bold text-[14px] text-gray-500 mb-4 tracking-wide uppercase">공모전 혜택</h3>
             <div className="flex flex-col border-t border-gray-100">
-              <div className="py-5 border-b border-gray-100 flex gap-4">
-                <span className="font-bold text-[#0A1931] w-10 shrink-0">1등</span>
+              
+              {/* 시상 내역 레이아웃 개선 (인기상이 깨지지 않도록 라벨 width 고정) */}
+              <div className="py-5 border-b border-gray-100 flex items-start gap-3">
+                <span className="font-bold text-[#0A1931] shrink-0 pt-0.5 w-[45px]">1등</span>
                 <div>
-                  <p className="font-bold text-gray-900 mb-1">일본 니가타현 왕복 항공권 & 숙박권 (1명)</p>
-                  <p className="text-[13px] text-gray-500 leading-relaxed">소설 속 사건의 배경이 되는 니가타현으로 떠나는 2인 여행을 지원합니다.</p>
+                  <p className="font-bold text-gray-900 mb-1 leading-snug">일본 니가타현 왕복 항공권 & 숙박권 (1명)</p>
+                  <p className="text-[13px] text-gray-500 leading-relaxed break-keep">소설 속 사건의 배경이 되는 니가타현으로 떠나는 2인 여행을 지원합니다.</p>
                 </div>
               </div>
-              <div className="py-5 border-b border-gray-100 flex gap-4">
-                <span className="font-bold text-gray-400 w-10 shrink-0">2등</span>
-                <p className="font-bold text-gray-800">갈릴레오 시리즈 세트 (5명)</p>
+
+              <div className="py-5 border-b border-gray-100 flex items-start gap-3">
+                <span className="font-bold text-gray-400 shrink-0 pt-0.5 w-[45px]">2등</span>
+                <div>
+                  <p className="font-bold text-gray-800 leading-snug">갈릴레오 시리즈 세트 (5명)</p>
+                </div>
               </div>
-              <div className="py-5 border-b border-gray-100 flex gap-4">
-                <span className="font-bold text-gray-400 w-10 shrink-0">참가상</span>
-                <p className="font-bold text-gray-800">커피 기프티콘 (30명 추첨)</p>
+
+              <div className="py-5 border-b border-gray-100 flex items-start gap-3">
+                <span className="font-bold text-gray-400 shrink-0 pt-0.5 w-[45px]">인기상</span>
+                <div>
+                  <p className="font-bold text-gray-800 leading-snug">커피 기프티콘 (30명 추첨)</p>
+                </div>
               </div>
+
             </div>
           </div>
         </div>
