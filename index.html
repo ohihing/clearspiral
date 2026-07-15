@@ -289,11 +289,6 @@
       return (
         <div className="animate-in fade-in duration-500">
           
-          {/* 메인 타이틀 이미지 영역 (텍스트 카피 대체) */}
-          <div className="w-full bg-white border-b border-gray-100">
-            <img src="event_title.png" alt="투명한 나선 카피 공모전" className="w-full h-auto block" onError={(e) => { e.target.style.display='none'; }} />
-          </div>
-
           <div className="relative w-full aspect-square overflow-hidden bg-gray-100 border-b border-gray-100"
                onMouseDown={onDragStart} onMouseMove={onDragMove} onMouseUp={onDragEnd} onMouseLeave={onDragEnd}
                onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd} style={{ touchAction: 'pan-y' }}>
