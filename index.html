@@ -48,10 +48,22 @@
     .animate-heart { animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
     .smooth-transition { transition: all 0.2s ease; }
 
+    /* 메뉴 오버레이 애니메이션 */
     .menu-enter { opacity: 0; transform: translateY(-10px); }
     .menu-enter-active { opacity: 1; transform: translateY(0); transition: opacity 300ms, transform 300ms; }
     .menu-exit { opacity: 1; transform: translateY(0); }
     .menu-exit-active { opacity: 0; transform: translateY(-10px); transition: opacity 300ms, transform 300ms; }
+
+    /* 💡 스크롤 시 떠오르는 모션 (Scroll Reveal) CSS */
+    .reveal-on-scroll {
+      opacity: 0;
+      transform: translateY(20px);
+      transition: opacity 0.7s cubic-bezier(0.165, 0.84, 0.44, 1), transform 0.7s cubic-bezier(0.165, 0.84, 0.44, 1);
+    }
+    .reveal-on-scroll.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
   </style>
 </head>
 <body class="font-sans">
@@ -113,6 +125,22 @@
         </svg>
       );
     };
+
+    // --- 스크롤 시 떠오르는 모션을 위한 래퍼 컴포넌트 ---
+    function RevealWrapper({ children, className = "" }) {
+      const ref = useRef(null);
+      useEffect(() => {
+        const observer = new IntersectionObserver(([entry]) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('is-visible');
+            observer.unobserve(entry.target); // 한 번 보이면 계속 유지
+          }
+        }, { threshold: 0.1 }); // 10% 정도 보일 때 발동
+        if (ref.current) observer.observe(ref.current);
+        return () => observer.disconnect();
+      }, []);
+      return <div ref={ref} className={`reveal-on-scroll ${className}`}>{children}</div>;
+    }
 
     // ==========================================
     // 메인 앱 구조 시작
@@ -328,13 +356,13 @@
             </div>
           </div>
 
-          <div className="px-6 py-6 border-b border-gray-100 bg-white">
+          <RevealWrapper className="px-6 py-6 border-b border-gray-100 bg-white">
             <button onClick={() => setView('participate')} className="w-full bg-[#0A1931] text-white py-4 rounded-full font-bold text-[15px] shadow-md hover:bg-[#1a2c4e] hover:shadow-lg smooth-transition tracking-wide">
               이벤트 참여하기
             </button>
-          </div>
+          </RevealWrapper>
 
-          <div className="px-6 py-10 border-b border-gray-100 bg-white">
+          <RevealWrapper className="px-6 py-10 border-b border-gray-100 bg-white">
             <div className="flex items-end justify-between mb-4">
               <h3 className="font-bold text-[16px] text-[#0A1931] tracking-tight">실시간 주요 응모작</h3>
               <button onClick={() => setView('list')} className="text-[12px] font-semibold text-gray-400 hover:text-[#0A1931] smooth-transition pb-0.5">전체보기</button>
@@ -352,16 +380,16 @@
                 topEntries.map((entry, idx) => <EntryRow key={entry.id} entry={entry} toggleLike={toggleLike} />)
               )}
             </div>
-          </div>
+          </RevealWrapper>
 
-          <div className="px-6 py-10 bg-white">
+          <RevealWrapper className="px-6 py-10 bg-white">
             <h3 className="font-bold text-[16px] text-[#0A1931] tracking-tight mb-6 text-center">도서 자세히 보기</h3>
             <div className="grid grid-cols-3 gap-3">
               <BookStoreSquare storeId="kyobo" img="ci_kyobo.png" url="https://product.kyobobook.co.kr/detail/S000220515357" name="교보문고" trackStoreClick={trackStoreClick} />
               <BookStoreSquare storeId="aladin" img="ci_aladin.png" url="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=398021172" name="알라딘" trackStoreClick={trackStoreClick} />
               <BookStoreSquare storeId="yes24" img="ci_yes24.png" url="https://www.yes24.com/product/goods/193807963" name="예스24" trackStoreClick={trackStoreClick} />
             </div>
-          </div>
+          </RevealWrapper>
         </div>
       );
     }
@@ -432,17 +460,19 @@
     function InfoView() {
       return (
         <div className="px-6 py-10 animate-in fade-in duration-500">
-          <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight mb-8 pb-4 border-b border-gray-100">이벤트 안내</h2>
-          
-          <div className="mb-10">
-            <h3 className="font-bold text-[14px] text-gray-500 mb-4 tracking-wide uppercase">참여 방법</h3>
-            <p className="text-[15px] text-gray-800 leading-relaxed font-medium break-keep">
-              히가시노 게이고의 신작 《투명한 나선》의 매력을 가장 잘 보여줄 수 있는 30자 이내의 카피를 작성해주세요.<br/><br/>
-              가장 많은 공감을 받은 카피는 실제 도서 띠지로 제작될 수 있습니다.
-            </p>
-          </div>
+          <RevealWrapper>
+            <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight mb-8 pb-4 border-b border-gray-100">이벤트 안내</h2>
+            
+            <div className="mb-10">
+              <h3 className="font-bold text-[14px] text-gray-500 mb-4 tracking-wide uppercase">참여 방법</h3>
+              <p className="text-[15px] text-gray-800 leading-relaxed font-medium break-keep">
+                히가시노 게이고의 신작 《투명한 나선》의 매력을 가장 잘 보여줄 수 있는 30자 이내의 카피를 작성해주세요.<br/><br/>
+                가장 많은 공감을 받은 카피는 실제 도서 띠지로 제작될 수 있습니다.
+              </p>
+            </div>
+          </RevealWrapper>
 
-          <div>
+          <RevealWrapper>
             <h3 className="font-bold text-[14px] text-gray-500 mb-4 tracking-wide uppercase">공모전 혜택</h3>
             <div className="flex flex-col border-t border-gray-100">
               <div className="py-5 border-b border-gray-100 flex items-start gap-4">
@@ -465,7 +495,7 @@
                 </div>
               </div>
             </div>
-          </div>
+          </RevealWrapper>
         </div>
       );
     }
@@ -481,12 +511,10 @@
         const { name, value } = e.target;
         if (name === 'content' && value.length > 30) return;
         if (name === 'password' && value.length > 4) return;
-        // 닉네임 글자수 최대 8자로 제한
         if (name === 'nickname' && value.length > 8) return;
         setForm(p => ({ ...p, [name]: value }));
       };
 
-      // 이메일 입력칸에서 포커스가 벗어날 때 기존 닉네임 불러오기
       const handleEmailBlur = () => {
         if (!form.email) return;
         const existingEntry = entries.find(ent => ent.email === form.email);
@@ -503,18 +531,13 @@
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return alert("올바른 이메일 형식을 입력해주세요.");
         if (bannedEmails.includes(form.email)) return alert("참여가 제한된 계정입니다.");
         if (entries.filter(ent => ent.email === form.email).length >= 3) return alert("최대 3번까지만 응모 가능합니다.");
-        
-        // 1. 비속어 필터링 (닉네임과 내용 분리하여 알림)
         if (BAD_WORDS.some(w => form.nickname.includes(w))) return alert("닉네임에 부적절한 단어가 포함되어 있습니다.");
         if (BAD_WORDS.some(w => form.content.includes(w))) return alert("응모 내용에 부적절한 단어가 포함되어 있습니다.");
 
-        // 2. 이메일-닉네임 일치 검증 (동일 이메일은 동일 닉네임만 허용)
         const existingEmailEntry = entries.find(ent => ent.email === form.email);
         if (existingEmailEntry && existingEmailEntry.nickname !== form.nickname) {
           return alert(`동일한 이메일은 기존 닉네임(${existingEmailEntry.nickname})으로만 참여 가능합니다.`);
         }
-
-        // 3. 닉네임 사칭 방지 검증 (다른 이메일이 선점한 닉네임 사용 불가)
         const existingNicknameEntry = entries.find(ent => ent.nickname === form.nickname);
         if (existingNicknameEntry && existingNicknameEntry.email !== form.email) {
           return alert("이미 다른 분이 사용 중인 닉네임입니다. 다른 닉네임을 설정해주세요.");
@@ -536,70 +559,71 @@
 
       return (
         <div className="px-6 py-10 animate-in fade-in duration-500">
-          <div className="mb-10 pb-4 border-b border-gray-100">
+          <RevealWrapper className="mb-10 pb-4 border-b border-gray-100">
             <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight mb-2">카피 공모전 응모하기</h2>
             <p className="text-[13px] text-gray-500 font-medium leading-relaxed break-keep">
               '나만의 한 수'가 담긴 카피를 응모해주세요. (공백 포함 30자 이하)
             </p>
-          </div>
+          </RevealWrapper>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="flex gap-4">
-              <div className="flex-1">
-                <label className="block text-[12px] font-bold text-gray-800 mb-2">닉네임 <span className="text-gray-400 font-normal ml-1">(최대 8자)</span></label>
-                <input type="text" name="nickname" value={form.nickname} onChange={handleChange} placeholder="예: 유카와" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
+          <RevealWrapper>
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div className="flex gap-4">
+                <div className="flex-1">
+                  <label className="block text-[12px] font-bold text-gray-800 mb-2">닉네임 <span className="text-gray-400 font-normal ml-1">(최대 8자)</span></label>
+                  <input type="text" name="nickname" value={form.nickname} onChange={handleChange} placeholder="예: 유카와" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
+                </div>
+                <div className="w-[110px]">
+                  <label className="block text-[12px] font-bold text-gray-800 mb-2">비밀번호</label>
+                  <input type="password" name="password" value={form.password} onChange={handleChange} placeholder="숫자 4자리" maxLength="4" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none tracking-widest text-center focus:border-[#0A1931] smooth-transition" />
+                </div>
               </div>
-              <div className="w-[110px]">
-                <label className="block text-[12px] font-bold text-gray-800 mb-2">비밀번호</label>
-                <input type="password" name="password" value={form.password} onChange={handleChange} placeholder="숫자 4자리" maxLength="4" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none tracking-widest text-center focus:border-[#0A1931] smooth-transition" />
+
+              <div>
+                <label className="block text-[12px] font-bold text-gray-800 mb-2">연락받을 이메일 주소</label>
+                <input type="email" name="email" value={form.email} onChange={handleChange} onBlur={handleEmailBlur} placeholder="이메일 주소 입력" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
               </div>
-            </div>
 
-            <div>
-              <label className="block text-[12px] font-bold text-gray-800 mb-2">연락받을 이메일 주소</label>
-              {/* 이메일 포커스 아웃 시(onBlur) 기존 닉네임 연동 */}
-              <input type="email" name="email" value={form.email} onChange={handleChange} onBlur={handleEmailBlur} placeholder="이메일 주소 입력" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
-            </div>
-
-            <div>
-              <div className="flex justify-between items-end mb-2">
-                <label className="block text-[12px] font-bold text-gray-800">응모 카피 내용</label>
-                <span className={`text-[11px] font-bold ${form.content.length >= 30 ? 'text-red-500' : 'text-gray-400'}`}>{form.content.length} / 30자</span>
+              <div>
+                <div className="flex justify-between items-end mb-2">
+                  <label className="block text-[12px] font-bold text-gray-800">응모 카피 내용</label>
+                  <span className={`text-[11px] font-bold ${form.content.length >= 30 ? 'text-red-500' : 'text-gray-400'}`}>{form.content.length} / 30자</span>
+                </div>
+                <textarea name="content" value={form.content} onChange={handleChange} placeholder="소설의 매력을 담은 한 줄을 적어주세요." rows="3" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[15px] leading-relaxed outline-none focus:border-[#0A1931] smooth-transition resize-none" />
               </div>
-              <textarea name="content" value={form.content} onChange={handleChange} placeholder="소설의 매력을 담은 한 줄을 적어주세요." rows="3" className="w-full p-4 bg-gray-50/50 border border-gray-200 rounded-none text-[15px] leading-relaxed outline-none focus:border-[#0A1931] smooth-transition resize-none" />
-            </div>
 
-            <div className="pt-4">
-              <ul className="text-[11px] text-gray-500 space-y-2 font-medium tracking-tight leading-relaxed">
-                <li>• 이메일 주소는 당첨 시 연락 수신이 가능한 주소로 입력해주세요.</li>
-                <li>• 당첨시 이메일 주소로 당첨 안내 메일이 발송됩니다.</li>
-                <li>• 한 개의 이메일 주소로 총 세 번 응모가 가능합니다. (기존 닉네임 연동)</li>
-                <li>• 입력한 이메일 주소는 관리자에게만 공개 됩니다.</li>
-                <li><strong className="text-red-500">• 부적절한 언어 및 타인을 비방하는 문구 사용 시, 관리자에 의해 삭제될 수 있습니다.</strong></li>
-              </ul>
-            </div>
+              <div className="pt-4">
+                <ul className="text-[11px] text-gray-500 space-y-2 font-medium tracking-tight leading-relaxed">
+                  <li>• 이메일 주소는 당첨 시 연락 수신이 가능한 주소로 입력해주세요.</li>
+                  <li>• 당첨시 이메일 주소로 당첨 안내 메일이 발송됩니다.</li>
+                  <li>• 한 개의 이메일 주소로 총 세 번 응모가 가능합니다. (기존 닉네임 연동)</li>
+                  <li>• 입력한 이메일 주소는 관리자에게만 공개 됩니다.</li>
+                  <li><strong className="text-red-500">• 부적절한 언어 및 타인을 비방하는 문구 사용 시, 관리자에 의해 삭제될 수 있습니다.</strong></li>
+                </ul>
+              </div>
 
-            <button type="submit" disabled={loading} className="w-full bg-[#0A1931] text-white py-4 rounded-full font-bold text-[15px] mt-6 disabled:opacity-50 hover:bg-[#1a2c4e] shadow-md hover:shadow-lg smooth-transition tracking-wide">
-              {loading ? '등록 중...' : '응모하기'}
-            </button>
-          </form>
+              <button type="submit" disabled={loading} className="w-full bg-[#0A1931] text-white py-4 rounded-full font-bold text-[15px] mt-6 disabled:opacity-50 hover:bg-[#1a2c4e] shadow-md hover:shadow-lg smooth-transition tracking-wide">
+                {loading ? '등록 중...' : '응모하기'}
+              </button>
+            </form>
+          </RevealWrapper>
         </div>
       );
     }
 
     // ==========================================
-    // 4. List View (전체보기)
+    // 4. List View (전체보기) + 5페이지 블록 단위 페이지네이션
     // ==========================================
     function ListView({ entries, user, toggleLike }) {
       const [sortType, setSortType] = useState('recent'); // 최신순 기본
       const [currentPage, setCurrentPage] = useState(1);
       const [isModalOpen, setIsModalOpen] = useState(false);
+      
       const itemsPerPage = 10;
+      const pageBlockSize = 5; // 하단에 표시할 최대 페이지 갯수
       
       const sortedEntries = useMemo(() => {
-        // 신고 누적 10회 미만인 정상적인 글만 노출 (블라인드 필터링)
         const validEntries = [...entries].filter(e => (e.reports || 0) < 10);
-        
         if (sortType === 'likes') validEntries.sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt);
         else validEntries.sort((a, b) => b.createdAt - a.createdAt);
         return validEntries;
@@ -608,50 +632,59 @@
       const totalPages = Math.ceil(sortedEntries.length / itemsPerPage) || 1;
       const currentItems = sortedEntries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+      // 페이지 블록 계산 로직
+      const currentBlock = Math.ceil(currentPage / pageBlockSize);
+      const startPage = (currentBlock - 1) * pageBlockSize + 1;
+      const endPage = Math.min(startPage + pageBlockSize - 1, totalPages);
+
       const getPageNumbers = () => {
         let pages = [];
-        let start = Math.max(1, currentPage - 2);
-        let end = Math.min(totalPages, start + 4);
-        if (end - start < 4) start = Math.max(1, end - 4);
-        for (let i = start; i <= end; i++) pages.push(i);
+        for (let i = startPage; i <= endPage; i++) pages.push(i);
         return pages;
       };
 
       return (
         <div className="px-6 py-10 animate-in fade-in duration-500 min-h-screen">
-          <div className="flex justify-between items-end mb-4 pb-4 border-b border-gray-100">
+          <RevealWrapper className="flex justify-between items-end mb-4 pb-4 border-b border-gray-100">
             <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight">응모작 전체 보기</h2>
             <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500 hover:text-[#0A1931] smooth-transition">
               <Icon name="search" size={14} /> 내 글 찾기
             </button>
-          </div>
+          </RevealWrapper>
 
-          <div className="bg-gray-50 p-3 rounded-lg mb-6 flex items-start gap-2">
+          <RevealWrapper className="bg-gray-50 p-3 rounded-lg mb-6 flex items-start gap-2">
              <Icon name="alertCircle" size={14} className="text-gray-400 shrink-0 mt-0.5" />
              <p className="text-[11px] text-gray-500 font-medium leading-relaxed">부적절한 응모작은 유저 신고 누적 및 관리자 모니터링을 통해 사전 통보 없이 블라인드/삭제될 수 있습니다.</p>
-          </div>
+          </RevealWrapper>
 
-          <div className="flex gap-4 mb-6 border-b border-gray-100">
+          <RevealWrapper className="flex gap-4 mb-6 border-b border-gray-100">
             <button onClick={() => { setSortType('recent'); setCurrentPage(1); }} className={`text-[13px] font-bold smooth-transition pb-3 border-b-2 -mb-[1px] ${sortType === 'recent' ? 'text-[#0A1931] border-[#0A1931]' : 'text-gray-400 border-transparent hover:text-gray-800'}`}>최신순</button>
             <button onClick={() => { setSortType('likes'); setCurrentPage(1); }} className={`text-[13px] font-bold smooth-transition pb-3 border-b-2 -mb-[1px] ${sortType === 'likes' ? 'text-[#0A1931] border-[#0A1931]' : 'text-gray-400 border-transparent hover:text-gray-800'}`}>추천순</button>
-          </div>
+          </RevealWrapper>
 
-          <div className="flex flex-col mb-10 border-b border-gray-100">
+          <div className="flex flex-col mb-10 border-b border-gray-100 min-h-[300px]">
             {currentItems.length === 0 ? <div className="text-center text-sm text-gray-400 py-16">작성된 글이 없습니다.</div>
               : currentItems.map((entry, idx) => <EntryRow key={entry.id} entry={entry} toggleLike={toggleLike} />)
             }
           </div>
 
+          {/* 블록 단위 이동이 적용된 페이지네이션 */}
           {totalPages > 1 && (
-            <div className="flex justify-center items-center gap-1 mt-8">
-              <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="p-2 text-gray-400 disabled:opacity-30"><Icon name="chevronsLeft" size={18} /></button>
+            <RevealWrapper className="flex justify-center items-center gap-1 mt-8">
+              {/* 이전 블록으로 이동 (예: 6~10 페이지 뷰에서 클릭 시 5페이지로 이동) */}
+              <button onClick={() => setCurrentPage(Math.max(1, startPage - 1))} disabled={startPage === 1} className="p-2 text-gray-400 disabled:opacity-30"><Icon name="chevronsLeft" size={18} /></button>
+              {/* 한 페이지 이전으로 이동 */}
               <button onClick={() => setCurrentPage(p=>Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 text-gray-400 disabled:opacity-30"><Icon name="chevronLeft" size={18} /></button>
+              
               <div className="flex gap-2 mx-3">
                 {getPageNumbers().map(num => <button key={num} onClick={() => setCurrentPage(num)} className={`text-[13px] font-bold smooth-transition w-6 h-6 flex items-center justify-center ${currentPage === num ? 'text-[#0A1931] border-b border-[#0A1931]' : 'text-gray-400 hover:text-gray-800'}`}>{num}</button>)}
               </div>
+              
+              {/* 한 페이지 다음으로 이동 */}
               <button onClick={() => setCurrentPage(p=>Math.min(totalPages, p+1))} disabled={currentPage === totalPages} className="p-2 text-gray-400 disabled:opacity-30"><Icon name="chevronRight" size={18} /></button>
-              <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="p-2 text-gray-400 disabled:opacity-30"><Icon name="chevronsRight" size={18} /></button>
-            </div>
+              {/* 다음 블록으로 이동 (예: 1~5 페이지 뷰에서 클릭 시 6페이지로 이동) */}
+              <button onClick={() => setCurrentPage(Math.min(totalPages, endPage + 1))} disabled={endPage === totalPages} className="p-2 text-gray-400 disabled:opacity-30"><Icon name="chevronsRight" size={18} /></button>
+            </RevealWrapper>
           )}
 
           {isModalOpen && <MyPostModal entries={entries} onClose={() => setIsModalOpen(false)} />}
@@ -679,7 +712,6 @@
       
       const handleUpdate = async () => {
         if(editContent.trim().length === 0 || editContent.length > 30) return alert('1자 이상, 30자 이내로 작성해주세요.');
-        // 수정 시에도 금지어 필터링 100% 작동
         if (BAD_WORDS.some(w => editContent.includes(w))) return alert("부적절한 단어가 포함되어 있습니다. 내용을 수정해주세요.");
         
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', editTarget.id), { content: editContent.trim() });
@@ -739,28 +771,30 @@
     function BookView({ trackStoreClick }) {
       return (
         <div className="px-6 py-10 animate-in fade-in duration-500">
-          <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight mb-8 pb-4 border-b border-gray-100">도서 안내</h2>
+          <RevealWrapper>
+            <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight mb-8 pb-4 border-b border-gray-100">도서 안내</h2>
+            
+            <div className="border border-gray-100 mb-10 bg-white">
+               <div className="w-full aspect-[3/4] bg-[#0A1931] flex flex-col items-center justify-center p-8 relative overflow-hidden">
+                  <div className="absolute w-64 h-64 bg-blue-500/20 rounded-full blur-3xl"></div>
+                  <p className="text-white/80 text-[12px] font-bold tracking-[0.3em] mb-4 relative z-10 uppercase">히가시노 게이고 신작</p>
+                  <h3 className="text-white text-4xl font-bold tracking-tighter relative z-10 text-center leading-tight">투명한<br/>나선</h3>
+               </div>
+               <div className="p-8 text-center">
+                  <h3 className="font-bold text-[17px] text-[#0A1931] mb-3 tracking-tight">천재 물리학자가 평생 숨겨 온 비밀!</h3>
+                  <p className="text-[14px] text-gray-600 leading-relaxed font-medium break-keep">"유카와 마나부, 너의 죄를 사하노라!"<br/><br/>갈릴레오 시리즈 최신작. 더욱 깊어진 미스터리와 감동이 소용돌이치는 걸작. 얽히고설킨 혈연과 인연의 비밀 속으로 초대합니다.</p>
+               </div>
+            </div>
+          </RevealWrapper>
           
-          <div className="border border-gray-100 mb-10 bg-white">
-             <div className="w-full aspect-[3/4] bg-[#0A1931] flex flex-col items-center justify-center p-8 relative overflow-hidden">
-                <div className="absolute w-64 h-64 bg-blue-500/20 rounded-full blur-3xl"></div>
-                <p className="text-white/80 text-[12px] font-bold tracking-[0.3em] mb-4 relative z-10 uppercase">히가시노 게이고 신작</p>
-                <h3 className="text-white text-4xl font-bold tracking-tighter relative z-10 text-center leading-tight">투명한<br/>나선</h3>
-             </div>
-             <div className="p-8 text-center">
-                <h3 className="font-bold text-[17px] text-[#0A1931] mb-3 tracking-tight">천재 물리학자가 평생 숨겨 온 비밀!</h3>
-                <p className="text-[14px] text-gray-600 leading-relaxed font-medium break-keep">"유카와 마나부, 너의 죄를 사하노라!"<br/><br/>갈릴레오 시리즈 최신작. 더욱 깊어진 미스터리와 감동이 소용돌이치는 걸작. 얽히고설킨 혈연과 인연의 비밀 속으로 초대합니다.</p>
-             </div>
-          </div>
-          
-          <div className="px-1 py-4 bg-white border-t border-gray-100 pt-8">
+          <RevealWrapper className="px-1 py-4 bg-white border-t border-gray-100 pt-8">
             <h3 className="font-bold text-[16px] text-[#0A1931] tracking-tight mb-6 text-center">도서 자세히 보기</h3>
             <div className="grid grid-cols-3 gap-3">
               <BookStoreSquare storeId="kyobo" img="ci_kyobo.png" url="https://product.kyobobook.co.kr/detail/S000220515357" name="교보문고" trackStoreClick={trackStoreClick} />
               <BookStoreSquare storeId="aladin" img="ci_aladin.png" url="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=398021172" name="알라딘" trackStoreClick={trackStoreClick} />
               <BookStoreSquare storeId="yes24" img="ci_yes24.png" url="https://www.yes24.com/product/goods/193807963" name="예스24" trackStoreClick={trackStoreClick} />
             </div>
-          </div>
+          </RevealWrapper>
         </div>
       );
     }
@@ -900,7 +934,6 @@
           <div className="space-y-4">
             <div className="flex items-center justify-between mb-4">
                <h3 className="font-bold text-[14px] text-[#0A1931]">실시간 데이터 목록</h3>
-               {/* 관리자 편의를 위한 신고 누적순 정렬 버튼 추가 */}
                <div className="flex gap-2">
                  <button onClick={() => setAdminSort('recent')} className={`text-[11px] font-bold px-2 py-1 border rounded ${adminSort==='recent' ? 'bg-[#0A1931] text-white' : 'bg-white text-gray-500'}`}>최신순</button>
                  <button onClick={() => setAdminSort('likes')} className={`text-[11px] font-bold px-2 py-1 border rounded ${adminSort==='likes' ? 'bg-[#0A1931] text-white' : 'bg-white text-gray-500'}`}>추천순</button>
