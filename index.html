@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>투명한 나선 카피 공모전</title>
+  
+  <!-- 1. Tailwind CSS (디자인 프레임워크) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 2. React & ReactDOM (리액트 핵심 라이브러리) -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  
+  <!-- 3. Babel (브라우저에서 React 코드를 실시간 번역해주는 도구) -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- 디자인 커스텀 스타일 (프리텐다드 폰트 및 애니메이션) -->
+  <style>
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+    
+    body, html {
+      font-family: 'Pretendard', sans-serif;
+      -ms-overflow-style: none; /* IE and Edge */
+      scrollbar-width: none; /* Firefox */
+      background-color: #f0f2f5;
+    }
+    body::-webkit-scrollbar, .hide-scroll::-webkit-scrollbar {
+      display: none; /* Chrome, Safari and Opera */
+    }
+    
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 4px 30px rgba(0, 0, 0, 0.08);
+    }
+
+    @keyframes heartPop {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.3); }
+      100% { transform: scale(1); }
+    }
+    .animate-heart {
+      animation: heartPop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+
+    .smooth-transition {
+      transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    }
+  </style>
+</head>
+<body>
+  <!-- React 앱이 그려질 빈 도화지 -->
+  <div id="root"></div>
+
+  <!-- 여기서부터 실제 작동하는 React 코드 (Babel이 번역해줍니다) -->
+  <script type="text/babel" data-type="module">
+    // --- 파이어베이스 모듈 직접 불러오기 ---
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+    const { useState, useEffect, useRef, useMemo, useCallback } = React;
+
+    // ==========================================
+    // 💡 마케터님 필독! 파이어베이스(Firebase) 설정 영역
+    // 추후 구글 파이어베이스에서 프로젝트를 만드신 후, 
+    // 발급받으신 'firebaseConfig' 값들을 아래에 덮어씌워주시면 됩니다!
+    // ==========================================
+    let userFirebaseConfig = {
+      // apiKey: "마케터님의 API KEY를 여기에 붙여넣으세요",
+      // authDomain: "...",
+      // projectId: "...",
+      // storageBucket: "...",
+      // messagingSenderId: "...",
+      // appId: "..."
+    };
+
+    // (※ AI 캔버스 테스트 환경 유지를 위한 코드 - 지우지 마세요)
+    if (typeof __firebase_config !== 'undefined' && Object.keys(__firebase_config).length > 0) {
+      userFirebaseConfig = JSON.parse(__firebase_config);
+    }
+    
+    const app = initializeApp(userFirebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    
+    // 이 앱의 고유 ID (데이터베이스 폴더명 생성에 쓰임)
+    const appId = typeof __app_id !== 'undefined' ? __app_id : 'event-helix-official';
+    const BAD_WORDS = ['파맛첵스', '바보', '멍청이', '일베', '음담패설'];
+
+    // ==========================================
+    // 🎨 아이콘 컴포넌트 모음 (단일 파일 유지를 위해 SVG 직접 구현)
+    // ==========================================
+    const svgPaths = {
+      home: <><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></>,
+      info: <><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></>,
+      edit3: <><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></>,
+      list: <><line x1="8" x2="21" y1="6" y2="6"/><line x1="8" x2="21" y1="12" y2="12"/><line x1="8" x2="21" y1="18" y2="18"/><line x1="3" x2="3.01" y1="6" y2="6"/><line x1="3" x2="3.01" y1="12" y2="12"/><line x1="3" x2="3.01" y1="18" y2="18"/></>,
+      bookOpen: <><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></>,
+      heart: <><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></>,
+      search: <><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></>,
+      x: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
+      lock: <><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></>,
+      download: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></>,
+      trash2: <><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></>,
+      ban: <><circle cx="12" cy="12" r="10"/><path d="m4.9 4.9 14.2 14.2"/></>,
+      chevronLeft: <path d="m15 18-6-6 6-6"/>,
+      chevronRight: <path d="m9 18 6-6-6-6"/>,
+      chevronsLeft: <><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></>,
+      chevronsRight: <><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></>
+    };
+
+    const Icon = ({ name, size = 24, className = "", fill = "none" }) => (
+      <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+        {svgPaths[name]}
+      </svg>
+    );
+
+    // ==========================================
+    // 메인 앱 구조 시작
+    // ==========================================
+    function App() {
+      const [user, setUser] = useState(null);
+      const [entries, setEntries] = useState([]);
+      const [bannedEmails, setBannedEmails] = useState([]);
+      
+      const [currentView, setCurrentView] = useState('home');
+      const [isNavVisible, setIsNavVisible] = useState(true);
+      const [lastScrollY, setLastScrollY] = useState(0);
+      const [isAdminAuth, setIsAdminAuth] = useState(false);
+
+      useEffect(() => {
+        const initAuth = async () => {
+          try {
+            // (AI 테스트 환경용 로그인 분기 - 실제 런칭 시엔 Anonymously로 자동 접속됨)
+            if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+              await signInWithCustomToken(auth, __initial_auth_token);
+            } else {
+              await signInAnonymously(auth);
+            }
+          } catch (error) {
+            console.error("Auth error:", error);
+          }
+        };
+        initAuth();
+        const unsubscribe = onAuthStateChanged(auth, (u) => setUser(u));
+        return () => unsubscribe();
+      }, []);
+
+      useEffect(() => {
+        if (!user) return;
+        const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'helix_entries');
+        const unsubEntries = onSnapshot(entriesRef, (snapshot) => {
+          const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+          setEntries(data);
+        }, (error) => console.error(error));
+
+        const bannedRef = collection(db, 'artifacts', appId, 'public', 'data', 'helix_banned');
+        const unsubBanned = onSnapshot(bannedRef, (snapshot) => {
+          const data = snapshot.docs.map(doc => doc.data().email);
+          setBannedEmails(data);
+        }, (error) => console.error(error));
+
+        return () => { unsubEntries(); unsubBanned(); };
+      }, [user]);
+
+      useEffect(() => {
+        const handleScroll = () => {
+          const currentScrollY = window.scrollY;
+          if (currentScrollY > lastScrollY && currentScrollY > 60) setIsNavVisible(false);
+          else setIsNavVisible(true);
+          setLastScrollY(currentScrollY);
+        };
+        window.addEventListener('scroll', handleScroll, { passive: true });
+        return () => window.removeEventListener('scroll', handleScroll);
+      }, [lastScrollY]);
+
+      useEffect(() => {
+        const checkHash = () => { if (window.location.hash === '#admin') setCurrentView('admin'); };
+        window.addEventListener('hashchange', checkHash);
+        checkHash();
+        return () => window.removeEventListener('hashchange', checkHash);
+      }, []);
+
+      const toggleLike = async (id, currentLikes) => {
+        if (!user) return;
+        const likedKey = `liked_${id}`;
+        const isLiked = localStorage.getItem(likedKey);
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', id);
+        
+        try {
+          if (isLiked) {
+            await updateDoc(docRef, { likes: Math.max(0, currentLikes - 1) });
+            localStorage.removeItem(likedKey);
+          } else {
+            await updateDoc(docRef, { likes: currentLikes + 1 });
+            localStorage.setItem(likedKey, 'true');
+          }
+        } catch (err) {
+          console.error("Like toggle failed", err);
+        }
+      };
+
+      return (
+        <div className="min-h-screen font-sans text-gray-900 pb-28 flex justify-center hide-scroll">
+          <div className="w-full max-w-md bg-white min-h-screen relative shadow-[0_0_40px_rgba(0,0,0,0.05)] overflow-x-hidden flex flex-col">
+            
+            <header className="pt-8 pb-4 px-6 flex justify-center items-center bg-white z-40 relative">
+              <img src="booklogo.png" alt="투명한 나선" className="h-10 object-contain" onError={(e) => { e.target.style.display='none'; e.target.insertAdjacentHTML('afterend', '<span class="font-bold text-2xl tracking-tighter text-[#0A1931]">투명한 나선</span>'); }} />
+            </header>
+
+            <main className="flex-grow flex flex-col relative z-10">
+              {currentView === 'home' && <HomeView setView={setCurrentView} entries={entries} toggleLike={toggleLike} />}
+              {currentView === 'info' && <InfoView />}
+              {currentView === 'participate' && <ParticipateView user={user} entries={entries} bannedEmails={bannedEmails} setView={setCurrentView} />}
+              {currentView === 'list' && <ListView entries={entries} user={user} toggleLike={toggleLike} />}
+              {currentView === 'book' && <BookView />}
+              {currentView === 'admin' && <AdminView entries={entries} isAdminAuth={isAdminAuth} setIsAdminAuth={setIsAdminAuth} />}
+            </main>
+
+            <footer className="mt-16 bg-[#F8F9FA] py-12 px-6 flex flex-col items-center border-t border-gray-100">
+              <AdminHiddenTrigger setView={setCurrentView}>
+                <img src="bi_vookda.png" alt="출판사 로고" className="h-6 object-contain opacity-40 hover:opacity-100 transition-opacity" onError={(e) => { e.target.style.display='none'; e.target.insertAdjacentHTML('afterend', '<span class="text-xs font-bold text-gray-400">VOOKDA</span>'); }} />
+              </AdminHiddenTrigger>
+              <p className="mt-4 text-[10px] text-gray-400">© 2026 VOOKDA. All rights reserved.</p>
+            </footer>
+
+            <nav className={`fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-[400px] glass-nav rounded-full flex justify-around px-2 py-2 z-50 smooth-transition ${isNavVisible ? 'translate-y-0 opacity-100' : 'translate-y-[150%] opacity-0 pointer-events-none'}`}>
+              <NavBtn label="홈" icon="home" view="home" current={currentView} set={setCurrentView} />
+              <NavBtn label="이벤트" icon="info" view="info" current={currentView} set={setCurrentView} />
+              <NavBtn label="참여하기" icon="edit3" view="participate" current={currentView} set={setCurrentView} />
+              <NavBtn label="공모작" icon="list" view="list" current={currentView} set={setCurrentView} />
+              <NavBtn label="도서" icon="bookOpen" view="book" current={currentView} set={setCurrentView} />
+            </nav>
+          </div>
+        </div>
+      );
+    }
+
+    function NavBtn({ label, view, current, set, icon }) {
+      const active = current === view;
+      return (
+        <button onClick={() => set(view)} className={`flex flex-col items-center justify-center w-16 h-14 rounded-2xl smooth-transition ${active ? 'text-[#0A1931]' : 'text-gray-400 hover:text-gray-600'}`}>
+          <div className={`mb-1 transition-transform ${active ? '-translate-y-0.5' : ''}`}>
+            <Icon name={icon} size={20} />
+          </div>
+          <span className={`text-[10px] font-medium tracking-tight ${active ? 'font-bold' : ''}`}>{label}</span>
+          <div className={`w-1 h-1 rounded-full bg-[#0A1931] mt-0.5 absolute bottom-1 transition-opacity ${active ? 'opacity-100' : 'opacity-0'}`} />
+        </button>
+      );
+    }
+
+    function AdminHiddenTrigger({ children, setView }) {
+      const [clicks, setClicks] = useState(0);
+      const handleClick = () => {
+        setClicks(c => c + 1);
+        if (clicks + 1 >= 5) { setView('admin'); setClicks(0); }
+      };
+      return <div onClick={handleClick} className="cursor-pointer select-none">{children}</div>;
+    }
+
+    // ==========================================
+    // 1. Home View
+    // ==========================================
+    function HomeView({ setView, entries, toggleLike }) {
+      const images = [{ id: 1, src: "001.jpg" }, { id: 2, src: "002.jpg" }, { id: 3, src: "003.jpg" }];
+      const [currentSlide, setCurrentSlide] = useState(0);
+      const [isDragging, setIsDragging] = useState(false);
+      const [dragOffset, setDragOffset] = useState(0);
+      const startX = useRef(0);
+      const autoPlayRef = useRef(null);
+
+      const startAutoPlay = useCallback(() => {
+        if (autoPlayRef.current) clearInterval(autoPlayRef.current);
+        autoPlayRef.current = setInterval(() => setCurrentSlide(prev => (prev + 1) % images.length), 5000);
+      }, [images.length]);
+
+      useEffect(() => {
+        startAutoPlay();
+        return () => clearInterval(autoPlayRef.current);
+      }, [startAutoPlay]);
+
+      const onDragStart = (e) => {
+        setIsDragging(true);
+        startX.current = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+        clearInterval(autoPlayRef.current);
+      };
+      const onDragMove = (e) => {
+        if (!isDragging) return;
+        const currentX = e.type.includes('mouse') ? e.pageX : e.touches[0].clientX;
+        setDragOffset(currentX - startX.current);
+      };
+      const onDragEnd = () => {
+        if (!isDragging) return;
+        setIsDragging(false);
+        if (dragOffset < -50 && currentSlide < images.length - 1) setCurrentSlide(c => c + 1);
+        else if (dragOffset < -50 && currentSlide === images.length - 1) setCurrentSlide(0);
+        else if (dragOffset > 50 && currentSlide > 0) setCurrentSlide(c => c - 1);
+        else if (dragOffset > 50 && currentSlide === 0) setCurrentSlide(images.length - 1);
+        setDragOffset(0);
+        startAutoPlay();
+      };
+
+      const topEntries = useMemo(() => [...entries].sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt).slice(0, 5), [entries]);
+
+      return (
+        <div className="animate-in fade-in duration-700 pb-8">
+          <div className="px-6 py-4">
+            <h1 className="text-[26px] leading-[1.3] font-bold text-[#0A1931] tracking-tight">&lt;투명한 나선&gt;<br/>카피 공모전</h1>
+            <p className="mt-2 text-sm text-gray-500 font-medium">최고의 한 줄을 남기고 일본 니가타로 떠나보세요.</p>
+          </div>
+
+          <div className="relative w-full aspect-square overflow-hidden bg-gray-100"
+               onMouseDown={onDragStart} onMouseMove={onDragMove} onMouseUp={onDragEnd} onMouseLeave={onDragEnd}
+               onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd} style={{ touchAction: 'pan-y' }}>
+            <div className="flex h-full w-full will-change-transform" style={{ transform: `translateX(calc(-${currentSlide * 100}% + ${dragOffset}px))`, transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)' }}>
+              {images.map((img, idx) => (
+                <div key={img.id} className="w-full h-full flex-shrink-0 relative select-none">
+                  <img src={img.src} alt={`이벤트 배너 ${idx + 1}`} className="w-full h-full object-cover pointer-events-none" onError={(e) => { e.target.src = `https://placehold.co/1000x1000/0A1931/FFFFFF?text=Event+Image+${img.id}` }} />
+                </div>
+              ))}
+            </div>
+            <div className="absolute bottom-5 left-0 right-0 flex justify-center gap-2 z-20">
+              {images.map((_, idx) => (
+                <button key={idx} onClick={() => { setCurrentSlide(idx); startAutoPlay(); }} className={`h-1.5 rounded-full smooth-transition ${idx === currentSlide ? 'bg-white w-6' : 'bg-white/40 w-1.5'}`} />
+              ))}
+            </div>
+          </div>
+
+          <div className="px-6 -mt-6 relative z-30">
+            <button onClick={() => setView('participate')} className="w-full bg-[#0A1931] text-white py-4 rounded-2xl font-bold text-base shadow-[0_10px_20px_rgba(10,25,49,0.3)] hover:bg-[#1a2c4e] hover:-translate-y-0.5 active:translate-y-0 smooth-transition">이벤트 참여하기</button>
+          </div>
+
+          <div className="px-6 mt-12">
+            <div className="flex items-center justify-between mb-5">
+              <h3 className="font-bold text-[17px] text-[#0A1931] tracking-tight">실시간 주요 응모작</h3>
+              <button onClick={() => setView('list')} className="text-xs font-semibold text-gray-400 hover:text-[#0A1931] smooth-transition">전체보기</button>
+            </div>
+            <div className="space-y-3">
+              {topEntries.length === 0 ? (
+                <div className="text-center text-sm text-gray-400 py-10 bg-gray-50/50 rounded-2xl border border-gray-100">아직 응모작이 없습니다.<br/>첫 번째 주인공이 되어보세요!</div>
+              ) : (
+                topEntries.map((entry, idx) => <EntryCard key={entry.id} entry={entry} rank={idx + 1} toggleLike={toggleLike} />)
+              )}
+            </div>
+          </div>
+
+          <div className="px-6 mt-12">
+            <h3 className="font-bold text-[17px] text-[#0A1931] tracking-tight mb-4">도서 자세히 보기</h3>
+            <div className="grid grid-cols-3 gap-3">
+              <BookstoreBtn img="ci_kyobo.png" url="https://product.kyobobook.co.kr/detail/S000220515357" name="교보문고" />
+              <BookstoreBtn img="ci_yes24.png" url="https://www.yes24.com/product/goods/193807963" name="예스24" />
+              <BookstoreBtn img="ci_aladin.png" url="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=398021172" name="알라딘" />
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    function EntryCard({ entry, rank, toggleLike }) {
+      const isLiked = localStorage.getItem(`liked_${entry.id}`);
+      const [animate, setAnimate] = useState(false);
+
+      const handleLikeClick = () => {
+        toggleLike(entry.id, entry.likes);
+        if (!isLiked) { setAnimate(true); setTimeout(() => setAnimate(false), 300); }
+      };
+
+      return (
+        <div className="bg-white p-5 rounded-2xl border border-[#F0F2F5] shadow-[0_4px_20px_-10px_rgba(0,0,0,0.05)] flex justify-between items-start gap-4 group hover:border-[#0A1931]/20 smooth-transition">
+          <div className="flex-1">
+            <div className="flex items-center gap-2 mb-2">
+              {rank && <span className="text-[10px] font-bold text-[#0A1931] bg-gray-100 px-2 py-0.5 rounded-full">{rank}위</span>}
+              <span className="font-bold text-gray-800 text-xs">{entry.nickname}</span>
+            </div>
+            <p className="text-[#333] text-[15px] leading-[1.5] break-keep font-medium tracking-tight">"{entry.content}"</p>
+          </div>
+          <button onClick={handleLikeClick} className={`flex flex-col items-center justify-center min-w-[52px] h-[52px] rounded-xl smooth-transition border ${isLiked ? 'bg-[#0A1931] border-[#0A1931]' : 'bg-gray-50 border-transparent hover:bg-gray-100'}`}>
+            <Icon name="heart" size={18} fill={isLiked ? "currentColor" : "none"} className={`${isLiked ? 'text-white' : 'text-gray-400'} ${animate ? 'animate-heart' : ''} mb-1`} />
+            <span className={`text-[10px] font-bold ${isLiked ? 'text-white' : 'text-gray-500'}`}>{entry.likes || 0}</span>
+          </button>
+        </div>
+      );
+    }
+
+    function BookstoreBtn({ img, url, name }) {
+      return (
+        <a href={url} target="_blank" rel="noreferrer" className="flex items-center justify-center h-12 bg-white border border-[#E5E7EB] rounded-xl shadow-sm hover:shadow-md hover:-translate-y-0.5 smooth-transition px-2">
+          <img src={img} alt={name} className="max-h-6 max-w-full object-contain" onError={(e) => { e.target.style.display='none'; e.target.insertAdjacentHTML('afterend', `<span class="text-[11px] font-bold text-gray-600">${name}</span>`); }} />
+        </a>
+      );
+    }
+
+    // ==========================================
+    // 2. Info View
+    // ==========================================
+    function InfoView() {
+      return (
+        <div className="px-6 py-8 animate-in fade-in duration-500 pb-20">
+          <h2 className="text-[22px] font-bold text-[#0A1931] tracking-tight mb-8">이벤트 안내</h2>
+          <div className="space-y-8">
+            <section>
+              <h3 className="font-bold text-sm text-[#0A1931] bg-gray-100 inline-block px-3 py-1 rounded-md mb-4">공모전 혜택</h3>
+              <ul className="text-[15px] text-gray-700 space-y-4 font-medium">
+                <li className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-[#0A1931] text-white flex items-center justify-center font-bold text-sm shrink-0">1등</div>
+                  <div>
+                    <span className="block font-bold text-[#0A1931] mb-1">일본 니가타현 왕복 항공권 & 숙박권 (1명)</span>
+                    <span className="text-xs text-gray-500 leading-relaxed">소설 속 사건의 배경이 되는 니가타현으로 떠나는 2인 여행을 지원합니다.</span>
+                  </div>
+                </li>
+                <li className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-600 flex items-center justify-center font-bold text-sm shrink-0">2등</div>
+                  <div><span className="block font-bold text-gray-800 mb-1">갈릴레오 시리즈 세트 (5명)</span></div>
+                </li>
+                <li className="flex items-start gap-3 bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-gray-100 text-gray-500 flex items-center justify-center font-bold text-sm shrink-0">참가상</div>
+                  <div><span className="block font-bold text-gray-800 mb-1">커피 기프티콘 (30명)</span></div>
+                </li>
+              </ul>
+            </section>
+            <section className="bg-[#0A1931] text-white p-6 rounded-2xl">
+              <h3 className="font-bold text-sm text-white/70 mb-3">참여 방법</h3>
+              <p className="text-[15px] leading-relaxed font-medium">히가시노 게이고의 신작 《투명한 나선》의 매력을 가장 잘 보여줄 수 있는 30자 이내의 카피를 작성해주세요.<br/><br/>가장 많은 공감을 받은 카피는 실제 도서 띠지로 제작될 수 있습니다.</p>
+            </section>
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 3. Participate View
+    // ==========================================
+    function ParticipateView({ user, entries, bannedEmails, setView }) {
+      const [form, setForm] = useState({ nickname: '', email: '', password: '', content: '' });
+      const [loading, setLoading] = useState(false);
+      const [msg, setMsg] = useState(null);
+
+      const handleChange = (e) => {
+        const { name, value } = e.target;
+        if (name === 'content' && value.length > 30) return;
+        if (name === 'password' && value.length > 4) return;
+        setForm(p => ({ ...p, [name]: value }));
+      };
+
+      const showMsg = (text, isSuccess = false) => {
+        setMsg({ text, isSuccess });
+        setTimeout(() => setMsg(null), 4000);
+      };
+
+      const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!user) return showMsg("서버 연결 대기 중입니다. 잠시 후 시도해주세요.");
+        if (!form.nickname || !form.email || !form.password || !form.content) return showMsg("모든 항목을 입력해주세요.");
+        if (form.password.length !== 4 || isNaN(form.password)) return showMsg("비밀번호는 숫자 4자리로 입력해주세요.");
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(form.email)) return showMsg("올바른 이메일 형식을 입력해주세요.");
+        if (bannedEmails.includes(form.email)) return showMsg("부적절한 언어 사용 및 참여 규정을 위반하여 더 이상 참여하실 수 없습니다.");
+        const userEntries = entries.filter(entry => entry.email === form.email);
+        if (userEntries.length >= 3) return showMsg("한 개의 이메일로 최대 3번까지만 응모 가능합니다.");
+        const hasBadWord = BAD_WORDS.some(word => form.content.includes(word) || form.nickname.includes(word));
+        if (hasBadWord) return showMsg("부적절한 단어가 포함되어 있습니다. 내용을 수정해주세요.");
+
+        setLoading(true);
+        try {
+          await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'helix_entries'), {
+            nickname: form.nickname.trim(), email: form.email.trim(), password: form.password, content: form.content.trim(), likes: 0, createdAt: Date.now()
+          });
+          setForm({ nickname: '', email: '', password: '', content: '' });
+          showMsg("응모가 완료되었습니다!", true);
+          setTimeout(() => setView('list'), 1500);
+        } catch (err) {
+          console.error(err);
+          showMsg("등록 중 오류가 발생했습니다.");
+        }
+        setLoading(false);
+      };
+
+      return (
+        <div className="px-6 py-8 animate-in slide-in-from-bottom-8 duration-500 pb-20">
+          <div className="mb-8">
+            <h2 className="text-[22px] font-bold text-[#0A1931] tracking-tight mb-2">&lt;투명한 나선&gt;<br/>카피 공모전 응모하기</h2>
+            <p className="text-[13px] text-gray-500 font-medium leading-relaxed">'나만의 한 수'가 담긴 카피를 응모해주세요.<br/>(공백 포함 30자 이하)</p>
+          </div>
+          <form onSubmit={handleSubmit} className="space-y-5">
+            <div className="flex gap-3">
+              <div className="flex-1">
+                <label className="block text-[11px] font-bold text-gray-600 mb-1.5 ml-1">닉네임</label>
+                <input type="text" name="nickname" value={form.nickname} onChange={handleChange} placeholder="예: 유카와" className="w-full p-4 bg-[#F8F9FA] border border-[#E5E7EB] rounded-2xl text-sm outline-none focus:bg-white focus:border-[#0A1931] focus:ring-1 focus:ring-[#0A1931] smooth-transition" />
+              </div>
+              <div className="w-[110px]">
+                <label className="block text-[11px] font-bold text-gray-600 mb-1.5 ml-1">비밀번호(4자리)</label>
+                <input type="password" name="password" value={form.password} onChange={handleChange} placeholder="0000" maxLength="4" className="w-full p-4 bg-[#F8F9FA] border border-[#E5E7EB] rounded-2xl text-sm outline-none tracking-widest text-center focus:bg-white focus:border-[#0A1931] focus:ring-1 focus:ring-[#0A1931] smooth-transition" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-[11px] font-bold text-gray-600 mb-1.5 ml-1">연락받을 이메일 주소</label>
+              <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="이메일 주소 입력" className="w-full p-4 bg-[#F8F9FA] border border-[#E5E7EB] rounded-2xl text-sm outline-none focus:bg-white focus:border-[#0A1931] focus:ring-1 focus:ring-[#0A1931] smooth-transition" />
+            </div>
+            <div>
+              <div className="flex justify-between items-end mb-1.5 px-1">
+                <label className="block text-[11px] font-bold text-gray-600">응모 카피 내용</label>
+                <span className={`text-[10px] font-bold ${form.content.length >= 30 ? 'text-red-500' : 'text-[#0A1931]'}`}>{form.content.length} / 30자</span>
+              </div>
+              <textarea name="content" value={form.content} onChange={handleChange} placeholder="소설의 매력을 담은 한 줄을 적어주세요." rows="3" className="w-full p-4 bg-[#F8F9FA] border border-[#E5E7EB] rounded-2xl text-[15px] leading-relaxed outline-none focus:bg-white focus:border-[#0A1931] focus:ring-1 focus:ring-[#0A1931] smooth-transition resize-none" />
+            </div>
+            <div className="bg-gray-50 rounded-xl p-4 mt-2">
+              <ul className="text-[10px] text-gray-500 space-y-1.5 font-medium tracking-tight">
+                <li>* 이메일 주소는 당첨 시 연락 수신이 가능한 주소로 입력해주세요.</li>
+                <li>* 당첨시 이메일 주소로 당첨 안내 메일이 발송됩니다.</li>
+                <li>* 한 개의 이메일 주소로 총 세 번 응모가 가능합니다.</li>
+                <li>* 입력한 이메일 주소는 관리자에게만 공개 됩니다.</li>
+                <li>* 입력한 비밀번호는 추후 본인 글 수정/삭제 시 사용됩니다.</li>
+              </ul>
+            </div>
+            {msg && <div className={`p-4 rounded-xl text-xs font-bold text-center animate-in zoom-in-95 duration-200 ${msg.isSuccess ? 'bg-[#0A1931] text-white' : 'bg-red-50 text-red-600 border border-red-100'}`}>{msg.text}</div>}
+            <button type="submit" disabled={loading} className="w-full bg-[#0A1931] text-white py-4 rounded-2xl font-bold text-base mt-4 disabled:opacity-50 shadow-lg hover:shadow-xl hover:-translate-y-0.5 active:translate-y-0 smooth-transition">
+              {loading ? '등록 중...' : '공모전 응모하기'}
+            </button>
+          </form>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 4. List View
+    // ==========================================
+    function ListView({ entries, user, toggleLike }) {
+      const [sortType, setSortType] = useState('likes');
+      const [currentPage, setCurrentPage] = useState(1);
+      const [isModalOpen, setIsModalOpen] = useState(false);
+      const itemsPerPage = 10;
+      
+      const sortedEntries = useMemo(() => {
+        const arr = [...entries];
+        if (sortType === 'likes') arr.sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt);
+        else arr.sort((a, b) => b.createdAt - a.createdAt);
+        return arr;
+      }, [entries, sortType]);
+
+      const totalPages = Math.ceil(sortedEntries.length / itemsPerPage) || 1;
+      const currentItems = sortedEntries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+      const getPageNumbers = () => {
+        let pages = [];
+        let start = Math.max(1, currentPage - 2);
+        let end = Math.min(totalPages, start + 4);
+        if (end - start < 4) start = Math.max(1, end - 4);
+        for (let i = start; i <= end; i++) pages.push(i);
+        return pages;
+      };
+
+      return (
+        <div className="px-6 py-8 animate-in fade-in duration-300 pb-20">
+          <div className="flex justify-between items-end mb-6">
+            <h2 className="text-[22px] font-bold text-[#0A1931] tracking-tight">응모작 전체 보기</h2>
+            <button onClick={() => setIsModalOpen(true)} className="flex items-center gap-1 text-[11px] font-bold text-gray-500 hover:text-[#0A1931] bg-white border border-gray-200 px-3 py-1.5 rounded-lg shadow-sm">
+              <Icon name="search" size={12} /> 내 글 찾기
+            </button>
+          </div>
+          <div className="flex gap-2 mb-6">
+            <button onClick={() => { setSortType('likes'); setCurrentPage(1); }} className={`flex-1 py-2.5 rounded-xl text-xs font-bold smooth-transition border ${sortType === 'likes' ? 'bg-[#0A1931] text-white border-[#0A1931]' : 'bg-white text-gray-500 border-gray-200'}`}>추천순</button>
+            <button onClick={() => { setSortType('recent'); setCurrentPage(1); }} className={`flex-1 py-2.5 rounded-xl text-xs font-bold smooth-transition border ${sortType === 'recent' ? 'bg-[#0A1931] text-white border-[#0A1931]' : 'bg-white text-gray-500 border-gray-200'}`}>최신순</button>
+          </div>
+          <div className="space-y-3 mb-8">
+            {currentItems.length === 0 ? <div className="text-center text-xs text-gray-400 py-16 bg-white border border-gray-100 rounded-2xl">작성된 글이 없습니다.</div>
+              : currentItems.map((entry, idx) => <EntryCard key={entry.id} entry={entry} rank={sortType === 'likes' ? (currentPage - 1) * itemsPerPage + idx + 1 : null} toggleLike={toggleLike} />)
+            }
+          </div>
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-1">
+              <button onClick={() => setCurrentPage(1)} disabled={currentPage === 1} className="p-2 text-gray-400 disabled:opacity-30"><Icon name="chevronsLeft" size={16} /></button>
+              <button onClick={() => setCurrentPage(p=>Math.max(1, p-1))} disabled={currentPage === 1} className="p-2 text-gray-400 disabled:opacity-30"><Icon name="chevronLeft" size={16} /></button>
+              <div className="flex gap-1 mx-2">
+                {getPageNumbers().map(num => <button key={num} onClick={() => setCurrentPage(num)} className={`w-8 h-8 rounded-full text-xs font-bold smooth-transition ${currentPage === num ? 'bg-[#0A1931] text-white' : 'text-gray-500 hover:bg-gray-100'}`}>{num}</button>)}
+              </div>
+              <button onClick={() => setCurrentPage(p=>Math.min(totalPages, p+1))} disabled={currentPage === totalPages} className="p-2 text-gray-400 disabled:opacity-30"><Icon name="chevronRight" size={16} /></button>
+              <button onClick={() => setCurrentPage(totalPages)} disabled={currentPage === totalPages} className="p-2 text-gray-400 disabled:opacity-30"><Icon name="chevronsRight" size={16} /></button>
+            </div>
+          )}
+          {isModalOpen && <MyPostModal entries={entries} onClose={() => setIsModalOpen(false)} />}
+        </div>
+      );
+    }
+
+    function MyPostModal({ entries, onClose }) {
+      const [authForm, setAuthForm] = useState({ email: '', password: '' });
+      const [myEntries, setMyEntries] = useState(null);
+      const [editTarget, setEditTarget] = useState(null);
+      const [editContent, setEditContent] = useState('');
+
+      const handleSearch = (e) => {
+        e.preventDefault();
+        setMyEntries(entries.filter(ent => ent.email === authForm.email && ent.password === authForm.password));
+      };
+      const handleDelete = async (id) => {
+        if(window.confirm("정말 삭제하시겠습니까?")) {
+          await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', id));
+          setMyEntries(prev => prev.filter(e => e.id !== id));
+        }
+      };
+      const handleUpdate = async () => {
+        if(editContent.trim().length === 0 || editContent.length > 30) return alert('1자 이상, 30자 이내로 작성해주세요.');
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', editTarget.id), { content: editContent.trim() });
+        setMyEntries(prev => prev.map(e => e.id === editTarget.id ? { ...e, content: editContent.trim() } : e));
+        setEditTarget(null);
+      };
+
+      return (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-sm rounded-3xl p-6 shadow-2xl relative">
+            <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><Icon name="x" size={20}/></button>
+            <h3 className="font-bold text-[18px] text-[#0A1931] mb-6">내 작성 글 찾기</h3>
+            {myEntries === null ? (
+              <form onSubmit={handleSearch} className="space-y-4">
+                <input type="email" value={authForm.email} onChange={e=>setAuthForm(p=>({...p, email:e.target.value}))} placeholder="이메일 주소" className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#0A1931]" required/>
+                <input type="password" value={authForm.password} onChange={e=>setAuthForm(p=>({...p, password:e.target.value}))} placeholder="비밀번호 4자리" maxLength={4} className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#0A1931]" required/>
+                <button type="submit" className="w-full bg-[#0A1931] text-white py-4 rounded-xl font-bold">검색하기</button>
+              </form>
+            ) : myEntries.length === 0 ? <div className="text-center py-8 text-sm text-gray-500">일치하는 내역이 없습니다.</div> : (
+              <div className="space-y-4 max-h-[60vh] overflow-y-auto pr-1">
+                {myEntries.map(ent => (
+                  <div key={ent.id} className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    {editTarget?.id === ent.id ? (
+                      <div>
+                        <textarea value={editContent} onChange={e=>setEditContent(e.target.value)} maxLength={30} rows={2} className="w-full p-3 bg-white border border-gray-300 rounded-lg text-sm resize-none outline-none focus:border-[#0A1931]" />
+                        <div className="flex justify-end gap-2 mt-2">
+                          <button onClick={()=>setEditTarget(null)} className="px-3 py-1.5 text-xs font-bold text-gray-500 bg-white border rounded-lg">취소</button>
+                          <button onClick={handleUpdate} className="px-3 py-1.5 text-xs font-bold text-white bg-[#0A1931] rounded-lg">저장</button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        <p className="text-[14px] font-medium text-gray-800 break-keep">"{ent.content}"</p>
+                        <div className="flex justify-between items-center mt-3">
+                          <span className="text-[10px] text-gray-500">추천수 {ent.likes}</span>
+                          <div className="flex gap-2">
+                            <button onClick={()=>{setEditTarget(ent); setEditContent(ent.content);}} className="text-xs font-bold text-blue-600">수정</button>
+                            <button onClick={()=>handleDelete(ent.id)} className="text-xs font-bold text-red-600">삭제</button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    // ==========================================
+    // 5. Book View
+    // ==========================================
+    function BookView() {
+      return (
+        <div className="px-6 py-8 animate-in fade-in duration-300 pb-20">
+          <h2 className="text-[22px] font-bold text-[#0A1931] tracking-tight mb-6">도서 안내</h2>
+          <div className="bg-white rounded-3xl border border-[#F0F2F5] shadow-[0_8px_30px_-10px_rgba(0,0,0,0.08)] overflow-hidden mb-8">
+             <div className="w-full aspect-[3/4] bg-[#0A1931] flex flex-col items-center justify-center p-8 relative">
+                <div className="absolute w-40 h-40 bg-blue-500/20 rounded-full blur-3xl"></div>
+                <p className="text-white/80 text-sm font-medium tracking-widest mb-3 relative z-10">히가시노 게이고 신작</p>
+                <h3 className="text-white text-3xl font-bold tracking-tight relative z-10 text-center leading-snug">투명한<br/>나선</h3>
+             </div>
+             <div className="p-6">
+                <h3 className="font-bold text-lg text-[#0A1931] mb-2 tracking-tight">천재 물리학자가 평생 숨겨 온 비밀!</h3>
+                <p className="text-[14px] text-gray-600 leading-relaxed font-medium break-keep">"유카와 마나부, 너의 죄를 사하노라!"<br/><br/>갈릴레오 시리즈 최신작. 더욱 깊어진 미스터리와 감동이 소용돌이치는 걸작. 얽히고설킨 혈연과 인연의 비밀 속으로 초대합니다.</p>
+             </div>
+          </div>
+          <div className="space-y-3">
+            <BookLinkBtn img="ci_kyobo.png" url="https://product.kyobobook.co.kr/detail/S000220515357" name="교보문고" />
+            <BookLinkBtn img="ci_yes24.png" url="https://www.yes24.com/product/goods/193807963" name="예스24" />
+            <BookLinkBtn img="ci_aladin.png" url="https://www.aladin.co.kr/shop/wproduct.aspx?ItemId=398021172" name="알라딘" />
+          </div>
+        </div>
+      );
+    }
+
+    function BookLinkBtn({ img, url, name }) {
+      return (
+        <a href={url} target="_blank" rel="noreferrer" className="flex items-center justify-between bg-white border border-[#E5E7EB] p-4 rounded-2xl shadow-sm hover:shadow-md hover:border-[#0A1931]/30 smooth-transition group">
+          <img src={img} alt={name} className="h-6 object-contain" onError={(e) => { e.target.style.display='none'; e.target.insertAdjacentHTML('afterend', `<span class="font-bold text-gray-700">${name}</span>`); }} />
+          <span className="text-xs font-bold text-[#0A1931] group-hover:translate-x-1 smooth-transition">도서 자세히 보기 &rarr;</span>
+        </a>
+      );
+    }
+
+    // ==========================================
+    // 6. Admin View
+    // ==========================================
+    function AdminView({ entries, isAdminAuth, setIsAdminAuth }) {
+      const [passwordInput, setPasswordInput] = useState('');
+      const ADMIN_PW = 'admin123';
+
+      if (!isAdminAuth) {
+        return (
+          <div className="p-8 flex flex-col items-center justify-center min-h-[60vh] animate-in fade-in">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-6"><Icon name="lock" size={24} className="text-[#0A1931]" /></div>
+            <h2 className="text-xl font-bold mb-6 text-[#0A1931] tracking-tight">관리자 접속</h2>
+            <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="비밀번호 입력" className="w-full max-w-[240px] p-4 border border-gray-200 rounded-2xl text-center text-sm outline-none focus:border-[#0A1931] mb-4 tracking-widest" onKeyDown={(e) => e.key === 'Enter' && passwordInput === ADMIN_PW && setIsAdminAuth(true)} />
+            <button onClick={() => passwordInput === ADMIN_PW ? setIsAdminAuth(true) : alert('비밀번호 불일치')} className="w-full max-w-[240px] bg-[#0A1931] text-white py-4 rounded-2xl font-bold text-sm shadow-lg hover:opacity-90 smooth-transition">접속하기</button>
+          </div>
+        );
+      }
+      return <AdminDashboard entries={entries} onLogout={() => setIsAdminAuth(false)} />;
+    }
+
+    function AdminDashboard({ entries, onLogout }) {
+      const [banInput, setBanInput] = useState('');
+      const sorted = useMemo(() => [...entries].sort((a,b) => b.likes - a.likes), [entries]);
+
+      const handleDelete = async (id) => {
+        if(window.confirm("정말 이 글을 삭제하시겠습니까?")) await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', id));
+      };
+      const handleBanAndDel = async (entry) => {
+        if(window.confirm(`삭제 및 이메일(${entry.email}) 영구 차단 진행하시겠습니까?`)) {
+          await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'helix_banned'), { email: entry.email, bannedAt: Date.now() });
+          await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', entry.id));
+        }
+      };
+      const manualBan = async () => {
+        if(!banInput.includes('@')) return alert('이메일 형식 확인');
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'helix_banned'), { email: banInput, bannedAt: Date.now(), type: 'manual' });
+        setBanInput(''); alert('차단 완료');
+      };
+      const exportCSV = () => {
+        const headers = ['순위', '닉네임', '이메일', '공감수', '카피내용', '작성일시'];
+        const rows = sorted.map((e, idx) => [idx + 1, e.nickname, e.email, e.likes || 0, `"${e.content.replace(/"/g, '""')}"`, new Date(e.createdAt).toLocaleString()]);
+        const csvContent = '\uFEFF' + [headers, ...rows].map(e => e.join(",")).join("\n"); 
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute("download", `투명한나선_이벤트데이터_${new Date().toISOString().slice(0,10)}.csv`);
+        document.body.appendChild(link); link.click(); document.body.removeChild(link);
+      };
+
+      return (
+        <div className="bg-[#F8F9FA] min-h-screen px-4 py-8 animate-in fade-in pb-32">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-[20px] font-bold text-[#0A1931] flex items-center gap-2"><Icon name="lock" size={18}/> 관리자 패널</h2>
+            <button onClick={onLogout} className="text-[11px] font-bold text-gray-400 border border-gray-300 px-3 py-1.5 rounded-lg bg-white">로그아웃</button>
+          </div>
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+              <span className="text-[11px] text-gray-500 font-bold mb-1">총 응모</span><span className="text-2xl font-bold text-[#0A1931]">{entries.length}</span>
+            </div>
+            <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 flex flex-col items-center justify-center">
+              <span className="text-[11px] text-gray-500 font-bold mb-1">총 공감</span><span className="text-2xl font-bold text-red-500">{entries.reduce((sum, e) => sum + (e.likes||0), 0)}</span>
+            </div>
+          </div>
+          <button onClick={exportCSV} className="w-full flex items-center justify-center gap-2 bg-[#0A1931] text-white py-4 rounded-2xl font-bold text-sm shadow-md mb-6 hover:bg-[#1a2c4e] smooth-transition">
+            <Icon name="download" size={16} /> 전체 데이터 엑셀(CSV) 다운로드
+          </button>
+          <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
+            <h3 className="font-bold text-xs text-[#0A1931] mb-3">수동 이메일 차단</h3>
+            <div className="flex gap-2">
+              <input type="email" value={banInput} onChange={e => setBanInput(e.target.value)} placeholder="차단할 이메일 입력" className="flex-1 border border-gray-200 p-3 rounded-xl text-xs outline-none focus:border-[#0A1931] bg-gray-50" />
+              <button onClick={manualBan} className="bg-red-500 text-white px-4 py-3 rounded-xl text-xs font-bold shrink-0">차단</button>
+            </div>
+          </div>
+          <div className="space-y-3">
+            <h3 className="font-bold text-sm text-[#0A1931] px-1">실시간 데이터 목록 (추천순)</h3>
+            {sorted.map((entry, idx) => (
+              <div key={entry.id} className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm">
+                <div className="flex justify-between items-start mb-2">
+                  <div>
+                    <span className="text-[10px] font-bold bg-gray-100 text-[#0A1931] px-2 py-0.5 rounded-full mr-2">{idx+1}위</span>
+                    <span className="font-bold text-xs text-gray-800">{entry.nickname}</span>
+                    <div className="text-[10px] text-gray-400 mt-0.5 font-mono">{entry.email} (PW: {entry.password})</div>
+                  </div>
+                  <span className="text-xs font-bold text-red-500 flex items-center gap-1"><Icon name="heart" size={10} fill="currentColor"/> {entry.likes}</span>
+                </div>
+                <p className="text-[13px] font-medium text-gray-700 break-keep bg-gray-50 p-3 rounded-xl mb-3">"{entry.content}"</p>
+                <div className="flex gap-2">
+                  <button onClick={() => handleDelete(entry.id)} className="flex-1 py-2 bg-gray-100 text-gray-600 rounded-lg text-[11px] font-bold flex justify-center items-center gap-1 hover:bg-gray-200 smooth-transition"><Icon name="trash2" size={12}/> 삭제</button>
+                  <button onClick={() => handleBanAndDel(entry)} className="flex-1 py-2 bg-red-50 text-red-600 rounded-lg text-[11px] font-bold flex justify-center items-center gap-1 hover:bg-red-100 smooth-transition"><Icon name="ban" size={12}/> 차단+삭제</button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    // React 앱 렌더링 시작
+    const root = ReactDOM.createRoot(document.getElementById('root'));
+    root.render(<App />);
+  </script>
+</body>
+</html>
