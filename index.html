@@ -101,12 +101,25 @@
   </style>
 </head>
 <body class="font-sans">
-  <div id="root"></div>
+  <div id="root">
+    
+    <!-- 👇 초기 로딩 스피너 👇 -->
+    <div style="display:flex; justify-content:center; align-items:center; height:100vh; flex-direction:column; gap:10px;">
+      <style>
+        .loader { border: 3px solid #f3f3f3; border-top: 3px solid #0A1931; border-radius: 50%; width: 24px; height: 24px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+      </style>
+      <div class="loader"></div>
+      <div style="font-size:12px; color:#666; font-family:sans-serif; text-align:center;">이벤트를 불러오는 중입니다...</div>
+    </div>
+    <!-- 👆 초기 로딩 스피너 끝 👆 -->
+
+  </div>
 
   <script type="text/babel" data-type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, setDoc, increment, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
     // ★ 리스트 애니메이션을 위한 라이브러리 추가
     import autoAnimate from "https://cdn.jsdelivr.net/npm/@formkit/auto-animate@0.8.2/+esm";
@@ -292,8 +305,11 @@
 
       useEffect(() => {
         if (!user) return;
+        // 변경: 전체 데이터를 다 가져오지 않고, 최신 작성일 기준 최대 500건만 가져오도록 제한 (비용/성능 최적화)
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'helix_entries');
-        const unsubEntries = onSnapshot(entriesRef, (snapshot) => {
+        const q = query(entriesRef, orderBy("createdAt", "desc"), limit(500));
+        
+        const unsubEntries = onSnapshot(q, (snapshot) => {
           setEntries(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
         }, (error) => console.error(error));
 
@@ -694,6 +710,67 @@
     }
 
     // ==========================================
+    // 내 글 찾기 모달 컴포넌트
+    // ==========================================
+    function MyPostModal({ entries, onClose }) {
+      const [email, setEmail] = useState('');
+      const [password, setPassword] = useState('');
+      const [myEntry, setMyEntry] = useState(null);
+      const [searchStatus, setSearchStatus] = useState('');
+
+      const handleSearch = () => {
+        const found = entries.find(e => e.email === email && e.password === password);
+        if (found) {
+          setMyEntry(found);
+          setSearchStatus('');
+        } else {
+          setMyEntry(null);
+          setSearchStatus('일치하는 응모작이 없거나 비밀번호가 틀렸습니다.');
+        }
+      };
+
+      const handleMyPostDelete = async () => {
+        if(window.confirm("정말 응모작을 삭제하시겠습니까?")) {
+          try {
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', myEntry.id));
+            alert("삭제되었습니다.");
+            onClose();
+          } catch(e) { console.error(e); alert("삭제 중 오류가 발생했습니다."); }
+        }
+      };
+
+      return (
+        <div className="fixed inset-0 z-[150] bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center p-6 animate-in fade-in">
+          <div className="bg-white p-6 rounded-2xl shadow-2xl relative w-full max-w-[340px] animate-in zoom-in-95">
+            <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-gray-800"><Icon name="x" size={24}/></button>
+            <h3 className="font-bold text-[#0A1931] mb-6 text-[16px] tracking-tight">내 응모작 찾기</h3>
+            
+            {!myEntry ? (
+              <div className="space-y-4">
+                <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="응모한 이메일 주소" className="w-full p-3 bg-gray-50 border border-gray-200 text-sm outline-none focus:border-[#0A1931] rounded-lg" />
+                <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="비밀번호 숫자 4자리" maxLength="4" className="w-full p-3 bg-gray-50 border border-gray-200 text-sm outline-none focus:border-[#0A1931] tracking-widest text-center rounded-lg" />
+                <button onClick={handleSearch} className="w-full bg-[#0A1931] text-white py-3 font-bold text-[14px] rounded-lg shadow-md">조회하기</button>
+                {searchStatus && <p className="text-red-500 text-[11px] text-center mt-2">{searchStatus}</p>}
+              </div>
+            ) : (
+              <div className="animate-in fade-in">
+                <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4">
+                  <div className="text-[11px] font-bold text-gray-500 mb-2">응모한 카피</div>
+                  <p className="text-[14px] font-medium text-gray-800 whitespace-pre-wrap">{myEntry.content}</p>
+                </div>
+                <div className="flex justify-between items-center px-1 mb-6">
+                  <span className="text-[12px] font-bold text-gray-500">현재 추천 수: <span className="text-[#0A1931]">{myEntry.likes || 0}</span></span>
+                  <span className="text-[12px] font-bold text-gray-500">조회용 닉네임: <span className="text-[#0A1931]">{myEntry.nickname}</span></span>
+                </div>
+                <button onClick={handleMyPostDelete} className="w-full bg-red-50 text-red-500 py-3 font-bold text-[14px] rounded-lg border border-red-100 hover:bg-red-100 smooth-transition">내 응모작 삭제하기</button>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    }
+    
+    // ==========================================
     // 3. Participate View (응모하기)
     // ==========================================
     function ParticipateView({ user, entries, bannedEmails, setView }) {
@@ -743,6 +820,7 @@
         setLoading(true);
         try {
           await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'helix_entries'), {
+            uid: user.uid, // <--- ★ 이 줄이 추가되었습니다!
             nickname: form.nickname.trim(), email: form.email.trim(), password: form.password, content: form.content.trim(), likes: 0, reports: 0, createdAt: Date.now()
           });
           setForm({ nickname: '', email: '', password: '', content: '' });
@@ -1097,16 +1175,27 @@
     // 6. Admin View (관리자 대시보드)
     // ==========================================
     function AdminView({ entries, bannedList, isAdminAuth, setIsAdminAuth, appId, db, user }) {
+      const [emailInput, setEmailInput] = useState('');
       const [passwordInput, setPasswordInput] = useState('');
-      const ADMIN_PW = 'kyobo3156!';
+
+      const handleLogin = async () => {
+        try {
+          // 파이어베이스 이메일 로그인 시도
+          await signInWithEmailAndPassword(auth, emailInput, passwordInput);
+          setIsAdminAuth(true);
+        } catch (error) {
+          alert('관리자 계정 정보가 일치하지 않습니다.');
+        }
+      };
 
       if (!isAdminAuth) {
         return (
           <div className="p-8 flex flex-col items-center justify-center min-h-[70vh] animate-in fade-in bg-gray-50">
             <Icon name="lock" size={32} className="text-[#0A1931] mb-6" />
             <h2 className="text-xl font-bold mb-8 text-[#0A1931] tracking-tight">관리자 접속</h2>
-            <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="비밀번호 입력" className="w-full max-w-[240px] p-4 border-b-2 border-gray-300 text-center text-sm outline-none focus:border-[#0A1931] mb-8 tracking-widest bg-transparent" onKeyDown={(e) => e.key === 'Enter' && passwordInput === ADMIN_PW && setIsAdminAuth(true)} />
-            <button onClick={() => passwordInput === ADMIN_PW ? setIsAdminAuth(true) : alert('비밀번호 불일치')} className="w-full max-w-[240px] bg-[#0A1931] text-white py-4 font-bold text-sm tracking-wide">접속하기</button>
+            <input type="email" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} placeholder="관리자 이메일" className="w-full max-w-[240px] p-4 border-b border-gray-300 text-sm outline-none focus:border-[#0A1931] mb-2 bg-transparent" />
+            <input type="password" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} placeholder="비밀번호 입력" className="w-full max-w-[240px] p-4 border-b border-gray-300 text-center text-sm outline-none focus:border-[#0A1931] mb-8 tracking-widest bg-transparent" onKeyDown={(e) => e.key === 'Enter' && handleLogin()} />
+            <button onClick={handleLogin} className="w-full max-w-[240px] bg-[#0A1931] text-white py-4 font-bold text-sm tracking-wide">접속하기</button>
           </div>
         );
       }
