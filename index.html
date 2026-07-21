@@ -136,8 +136,13 @@
     const BAD_WORDS = RAW_BAD_WORDS.map(word => word.trim());
 
     // --- 아이콘 컴포넌트 ---
-    const Icon = ({ name, size = 24, className = "", fill = "none" }) => {
+    const Icon = ({ name, size = 24, fill = "none", className = "" }) => {
       const paths = {
+        // 새로 추가된 재생/정지 아이콘 (색상이 채워지도록 설정)
+        play: <path d="M8 5v14l11-7z" fill="currentColor" stroke="none" />,
+        pause: <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor" stroke="none" />,
+        
+        // 기존에 있던 아이콘들
         menu: <><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></>,
         x: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
         heart: <><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></>,
@@ -153,6 +158,7 @@
         alertCircle: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>,
         eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>
       };
+
       return (
         <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
           {paths[name]}
@@ -410,6 +416,7 @@
       useReveal(); 
       const images = [{ id: 1, src: "001.png" }, { id: 2, src: "002.png" }, { id: 3, src: "003.png" }, { id: 4, src: "004.png" }];
       const [currentSlide, setCurrentSlide] = useState(0);
+      const [isPaused, setIsPaused] = useState(false); // 멈춤 상태 추가
       const [isDragging, setIsDragging] = useState(false);
       const [dragOffset, setDragOffset] = useState(0);
       const [sortType, setSortType] = useState('recent'); 
@@ -420,8 +427,11 @@
 
       const startAutoPlay = useCallback(() => {
         if (autoPlayRef.current) clearInterval(autoPlayRef.current);
-        autoPlayRef.current = setInterval(() => setCurrentSlide(prev => (prev + 1) % images.length), 5000);
-      }, [images.length]);
+        // 정지(isPaused) 상태가 아닐 때만 자동 롤링 실행
+        if (!isPaused) {
+          autoPlayRef.current = setInterval(() => setCurrentSlide(prev => (prev + 1) % images.length), 5000);
+        }
+      }, [images.length, isPaused]);
 
       useEffect(() => {
         startAutoPlay();
@@ -465,17 +475,43 @@
             <div className="flex h-full w-full will-change-transform" style={{ transform: `translateX(calc(-${currentSlide * 100}% + ${dragOffset}px))`, transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)' }}>
               {images.map((img, idx) => (
                 <div key={img.id} className="w-full h-full flex-shrink-0 relative select-none bg-[#0A1931]">
-                  <img src={img.src} alt={`배너 ${idx + 1}`} className="w-full h-full object-cover pointer-events-none" onError={(e) => { e.target.style.display='none'; }} />
+                  <img 
+                    src={img.src} 
+                    alt={`배너 ${idx + 1}`} 
+                    className="w-full h-full object-cover pointer-events-none" 
+                    onError={(e) => { e.target.style.display='none'; }} 
+                    // PC에서 이미지가 흐려지거나 깨지는 것을 방지하는 스타일 추가
+                    style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitFontSmoothing: 'antialiased' }} 
+                  />
                 </div>
               ))}
             </div>
-            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-20">
-              {images.map((_, idx) => (
-                <button key={idx} onClick={() => { setCurrentSlide(idx); startAutoPlay(); }} className={`h-1.5 rounded-none smooth-transition ${idx === currentSlide ? 'bg-white w-6' : 'bg-white/40 w-1.5'}`} />
-              ))}
+            
+            {/* 하단 네비게이션: 재생/정지 버튼 + 원형 점 */}
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-3 z-20">
+              <button 
+                onClick={() => setIsPaused(!isPaused)} 
+                className="w-6 h-6 flex justify-center items-center text-white/70 hover:text-white transition-colors"
+              >
+                <Icon name={isPaused ? "play" : "pause"} size={16} />
+              </button>
+              
+              <div className="flex gap-2 items-center">
+                {images.map((_, idx) => (
+                  <button 
+                    key={idx} 
+                    onClick={() => { 
+                      setCurrentSlide(idx); 
+                      setIsPaused(true); // 직접 클릭 시 읽으려는 의도이므로 롤링을 멈춤
+                    }} 
+                    className={`transition-all duration-300 rounded-full ${idx === currentSlide ? 'w-2 h-2 bg-white' : 'w-2 h-2 bg-white/50'}`} 
+                  />
+                ))}
+              </div>
             </div>
           </div>
-
+          
+          {/* (이하 topEntries 등 기존 코드 유지) */}
           <div className="px-6 py-6 border-b border-gray-100 bg-white">
             <button onClick={() => setView('participate')} className="w-full bg-[#0A1931] text-white py-4 rounded-full font-bold text-[15px] shadow-md hover:bg-[#1a2c4e] hover:shadow-lg smooth-transition tracking-wide">
               이벤트 참여하기
