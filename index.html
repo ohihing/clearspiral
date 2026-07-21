@@ -91,7 +91,6 @@
     const db = getFirestore(app);
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'event-helix-official';
     
-    // 부적절 금지어 사전
     const RAW_BAD_WORDS = ['일베', '개새끼', '개새기', '시발럼', '씨발', '좆', '조까', '좆까', '시팔', '씨팔', '썅놈', 'nigger', '오줌', 'ㅅㅂㄹ', 'ㅅㅂㄴ', 'ㅅㅂ', 'ㅅㅍ', '씹새끼', '씹놈', '병신', '등신', '븅신', '미췬넘', '호로새끼', ' 시발새끼', '181819', '븅딱', '애미', '애미나이', '자지', '보지', '꼬추', '똥꼬', '섹스', 'sex', '성행위', '족까', '좃', '시1발', '씨1발', '씨1팔', '좆1까', '미1친', '노무노무', '노무', '젖', '유방', '이기야', '창녀', '창년', '아가리', '떡치', 'x끼', 'x발', 'x팔', '뒤져라', '응디', '쓰벌', '좌빨', '극우', '베충', '종북', '내란', '국힘', '민주당', '이재명', '재매이햄', '문재앙', '문재인', '이명박', '박근혜', ' 박정희', '전두환', '전땅크', 'ㅈ같이', '음란', '대깨문', '조센징', '쪽빠리', '쪽빨이', '조센진', '왜놈', '양키', '흑형', '니거', '성폭행', '성추행', '강간', '윤간', '공산당', '존나', 'ㅈㄴ', '틀딱', '돼지년', '짭새', '쥐박이', '지랄', '쥐랄', '짱깨', '성괴', '젼나', '쑤레기', '18년'];
     const BAD_WORDS = RAW_BAD_WORDS.map(word => word.trim());
 
@@ -110,27 +109,18 @@
         chevronRight: <path d="m9 18 6-6-6-6"/>,
         chevronsLeft: <><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></>,
         chevronsRight: <><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></>,
-        users: <><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></>,
         mousePointer: <><path d="m3 3 7.07 16.97 2.51-7.39 7.39-2.51L3 3z"/><path d="m13 13 6 6"/></>,
         alertCircle: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>,
         eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>
       };
-      return (
-        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
-          {paths[name]}
-        </svg>
-      );
+      return <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill={fill} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>{paths[name]}</svg>;
     };
 
     // --- 스크롤 모션 훅 ---
     function useReveal() {
       useEffect(() => {
         const observer = new IntersectionObserver((entries) => {
-          entries.forEach(e => {
-            if (e.isIntersecting) {
-              e.target.classList.add('active');
-            }
-          });
+          entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('active'); });
         }, { threshold: 0.1 });
         const elements = document.querySelectorAll('.reveal');
         elements.forEach(el => observer.observe(el));
@@ -141,26 +131,88 @@
     // --- 📚 도서 표지 띠지 렌더링 전용 컴포넌트 ---
     function BookCoverPreviewUI({ content }) {
       return (
-        <div className="relative w-full max-w-[240px] mx-auto shadow-lg border border-gray-200 bg-white">
-          <img src="book_copy.png" alt="도서 표지 띠지 미리보기" className="w-full h-auto block" 
+        <div className="relative w-full max-w-[280px] mx-auto shadow-xl border border-gray-200 bg-white">
+          <img src="book_copy_2.jpg" alt="도서 표지 띠지 미리보기" className="w-full h-auto block" 
                onError={(e) => { 
                  e.target.style.display='none'; 
-                 e.target.insertAdjacentHTML('afterend', '<div class="w-full aspect-[2/3] bg-gray-200 flex items-center justify-center text-xs text-gray-500">book_copy.png 오류</div>'); 
+                 e.target.insertAdjacentHTML('afterend', '<div class="w-full aspect-[2/3] bg-gray-200 flex items-center justify-center text-xs text-gray-500">book_copy_2.jpg 필요</div>'); 
                }} />
           
-          <div className="absolute bottom-0 left-0 w-full h-[26%] flex items-center justify-center px-4">
-            <p 
-              className="font-bold text-center leading-[1.4] tracking-tight"
-              style={{
-                fontFamily: "'Noto Serif KR', serif", 
-                color: '#0A1931', 
-                wordBreak: 'keep-all', 
-                fontSize: content?.length > 16 ? '13px' : '15px'
-              }}
-            >
-              {content || "이곳에 띠지 카피가 노출됩니다."}
+          {/* 하단 핑크 띠지 영역 텍스트 절대좌표 매핑 
+              전체 1225x1800, 타겟 1110x220, 센터 X=610, Y=1460 (top 기준 81.11%) */}
+          <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center" 
+               style={{ top: '81.11%', width: '90.61%', height: '12.22%' }}>
+            <p className="font-bold text-center leading-[1.6] tracking-tight whitespace-pre-wrap px-2"
+               style={{
+                 fontFamily: "'Noto Serif KR', serif", 
+                 color: '#0A1931', 
+                 wordBreak: 'keep-all', 
+                 fontSize: '13px'
+               }}>
+              {content || "이곳에 들어갈\n띠지 카피를 응모해주세요"}
             </p>
           </div>
+        </div>
+      );
+    }
+
+    // --- 📚 3D 도서 회전 컴포넌트 ---
+    function Book3D() {
+      const [rotateY, setRotateY] = useState(-25);
+      const [isDragging, setIsDragging] = useState(false);
+      const startX = useRef(0);
+      const currentRot = useRef(-25);
+
+      const onStart = (e) => {
+        setIsDragging(true);
+        startX.current = e.touches ? e.touches[0].clientX : e.clientX;
+      };
+      const onMove = (e) => {
+        if (!isDragging) return;
+        const x = e.touches ? e.touches[0].clientX : e.clientX;
+        const delta = x - startX.current;
+        setRotateY(currentRot.current + delta * 0.6);
+      };
+      const onEnd = () => {
+        setIsDragging(false);
+        currentRot.current = rotateY;
+      };
+
+      return (
+        <div className="relative w-full h-[320px] flex justify-center items-center overflow-hidden cursor-grab active:cursor-grabbing mb-8"
+             onMouseDown={onStart} onMouseMove={onMove} onMouseUp={onEnd} onMouseLeave={onEnd}
+             onTouchStart={onStart} onTouchMove={onMove} onTouchEnd={onEnd}
+             style={{ perspective: '1200px' }}>
+           
+           <div className="relative w-[180px] h-[282px]" style={{ transformStyle: 'preserve-3d', transform: `rotateY(${rotateY}deg)`, transition: isDragging ? 'none' : 'transform 0.1s' }}>
+              {/* 앞표지 */}
+              <div className="absolute inset-0 bg-white" style={{ transform: 'translateZ(15px)' }}>
+                 <img src="book_01.jpg" className="w-full h-full object-cover shadow-sm" alt="앞표지" />
+              </div>
+              {/* 뒷표지 */}
+              <div className="absolute inset-0 bg-white" style={{ transform: 'rotateY(180deg) translateZ(15px)' }}>
+                 <img src="book_03.jpg" className="w-full h-full object-cover shadow-sm" alt="뒷표지" />
+              </div>
+              {/* 책등 */}
+              <div className="absolute top-0 left-0 h-full w-[30px] bg-white" style={{ transform: 'translateZ(15px) rotateY(-90deg)', transformOrigin: 'center left' }}>
+                 <img src="book_02.jpg" className="w-full h-full object-cover" alt="책등" />
+              </div>
+              {/* 책 속지 (우측 면) */}
+              <div className="absolute top-0 right-0 h-full w-[30px] bg-[#f4f4f4] border-y border-gray-200" style={{ transform: 'translateZ(15px) rotateY(90deg)', transformOrigin: 'center right' }}>
+                 <div className="w-full h-full flex flex-col justify-evenly opacity-30">
+                    <div className="border-t border-gray-300 w-full h-[1px]"></div>
+                    <div className="border-t border-gray-300 w-full h-[1px]"></div>
+                    <div className="border-t border-gray-300 w-full h-[1px]"></div>
+                 </div>
+              </div>
+              {/* 상단/하단 속지 */}
+              <div className="absolute top-0 left-0 w-full h-[30px] bg-[#f4f4f4]" style={{ transform: 'translateZ(15px) rotateX(90deg)', transformOrigin: 'top center' }}></div>
+              <div className="absolute bottom-0 left-0 w-full h-[30px] bg-[#f4f4f4]" style={{ transform: 'translateZ(15px) rotateX(-90deg)', transformOrigin: 'bottom center' }}></div>
+           </div>
+           
+           <div className="absolute bottom-2 text-[11px] text-[#0A1931] font-bold bg-white/70 backdrop-blur px-3 py-1.5 rounded-full pointer-events-none flex items-center gap-1 shadow-sm">
+             <Icon name="mousePointer" size={12} /> 좌우로 돌려보세요
+           </div>
         </div>
       );
     }
@@ -204,31 +256,20 @@
         return () => { unsubEntries(); unsubBanned(); };
       }, [user]);
 
-      useEffect(() => {
-        const checkHash = () => { if (window.location.hash === '#admin') setCurrentView('admin'); };
-        window.addEventListener('hashchange', checkHash);
-        checkHash();
-        return () => window.removeEventListener('hashchange', checkHash);
-      }, []);
-
       const toggleLike = async (id, isCurrentlyLiked) => {
         if (!user) return;
         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', id);
         try {
-          if (isCurrentlyLiked) {
-            await updateDoc(docRef, { likes: increment(-1) });
-          } else {
-            await updateDoc(docRef, { likes: increment(1) });
-          }
+          if (isCurrentlyLiked) await updateDoc(docRef, { likes: increment(-1) });
+          else await updateDoc(docRef, { likes: increment(1) });
         } catch (err) { console.error("Like toggle failed:", err); }
       };
 
       const trackStoreClick = async (storeName) => {
         if (!user) return;
         const metricsRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_metrics', 'store_clicks');
-        try {
-          await setDoc(metricsRef, { [storeName]: increment(1) }, { merge: true });
-        } catch (err) { console.error("Click tracking failed:", err); }
+        try { await setDoc(metricsRef, { [storeName]: increment(1) }, { merge: true }); } 
+        catch (err) { console.error("Click tracking failed:", err); }
       };
 
       const handleNavClick = (view) => {
@@ -403,12 +444,11 @@
               {topEntries.length === 0 ? (
                 <div className="text-center text-sm text-gray-400 py-12">아직 응모작이 없습니다.</div>
               ) : (
-                topEntries.map((entry, idx) => (
+                topEntries.map((entry) => (
                   <EntryRow 
                     key={entry.id} 
                     entry={entry} 
                     toggleLike={toggleLike} 
-                    rank={sortType === 'likes' ? null : idx + 1} 
                     onPreview={(content) => setPreviewModalContent(content)} 
                   />
                 ))
@@ -434,12 +474,11 @@
               </div>
             </div>
           )}
-
         </div>
       );
     }
 
-    function EntryRow({ entry, toggleLike, rank, onPreview }) {
+    function EntryRow({ entry, toggleLike, onPreview }) {
       const [isLiked, setIsLiked] = useState(!!localStorage.getItem(`liked_${entry.id}`));
       const [animate, setAnimate] = useState(false);
 
@@ -473,10 +512,10 @@
         <div className="py-5 border-t border-gray-100 flex justify-between items-start gap-4 group">
           <div className="flex-1">
             <div className="flex items-center gap-2 mb-2">
-              {rank && <span className="text-[11px] font-bold text-[#0A1931] tracking-tight">{rank}.</span>}
               <span className="font-bold text-gray-800 text-[13px]">{entry.nickname}</span>
             </div>
-            <p className="text-[#333] text-[15px] leading-[1.6] break-keep font-medium tracking-tight">{entry.content}</p>
+            {/* whitespace-pre-wrap 을 통해 줄바꿈(엔터)이 그대로 반영되도록 수정 */}
+            <p className="text-[#333] text-[15px] leading-[1.6] break-keep font-medium tracking-tight whitespace-pre-wrap">{entry.content}</p>
             
             <div className="mt-3 flex items-center gap-3">
               {onPreview && (
@@ -511,38 +550,78 @@
     function InfoView() {
       useReveal();
       return (
-        <div className="px-6 py-10 animate-in fade-in duration-500">
-          <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight mb-8 pb-4 border-b border-gray-100 reveal">이벤트 안내</h2>
+        <div className="px-6 py-10 animate-in fade-in duration-500 bg-[#F8F9FA] min-h-screen pb-20">
           
-          <div className="mb-10 reveal">
-            <h3 className="font-bold text-[14px] text-gray-500 mb-4 tracking-wide uppercase">참여 방법</h3>
-            <p className="text-[15px] text-gray-800 leading-relaxed font-medium break-keep">
-              히가시노 게이고의 신작 《투명한 나선》의 매력을 가장 잘 보여줄 수 있는 30자 이내의 카피를 작성해주세요.<br/><br/>
-              가장 많은 공감을 받은 카피는 실제 도서 띠지로 제작될 수 있습니다.
+          <div className="mb-10 reveal text-center">
+            <h3 className="font-bold text-[18px] text-[#0A1931] mb-3 leading-snug">『투명한 나선』 띠지 카피 공모전</h3>
+            <p className="text-[14px] text-gray-700 leading-relaxed font-medium break-keep">
+              히가시노 게이고 대표 시리즈 최신작<br/>
+              『투명한 나선』에 들어갈 새로운 카피를 써 주세요.<br/>
+              ‘나는 이 책을 이렇게 말하고 싶다!’<br/>
+              띠지 카피 공모전에 많은 관심과 참여를 부탁드립니다.
             </p>
           </div>
 
+          <img src="detail.jpg" alt="상세 안내" className="w-full h-auto mb-10 reveal rounded-xl shadow-md" onError={(e) => { e.target.style.display='none'; }} />
+
+          <div className="reveal mb-10 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <h3 className="font-bold text-[16px] text-[#0A1931] mb-5 border-b border-gray-100 pb-3">공모전 당선 경품</h3>
+            
+            <div className="mb-6">
+              <p className="font-bold text-[#0A1931] mb-1">[대상(1명)]</p>
+              <p className="text-[14px] text-gray-800 leading-relaxed font-medium">
+                소설의 주요 배경지<br/>
+                '일본 니가타' 왕복 항공권(1인 2매)<br/>
+                <span className="text-[12px] text-gray-500 font-normal">* (제세공과금 22% 본인 부담)</span>
+              </p>
+            </div>
+            
+            <div>
+              <p className="font-bold text-[#0A1931] mb-1">[우수상(10명)]</p>
+              <p className="text-[14px] text-gray-800 leading-relaxed font-medium">배달의민족 상품권(5만 원)</p>
+            </div>
+          </div>
+
+          <div className="reveal mb-10 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <ul className="text-[14px] text-gray-800 font-medium space-y-3">
+              <li><span className="text-[#0A1931] font-bold mr-2">- 이벤트 기간:</span> 7.22(수) ~ 8.31(월)</li>
+              <li><span className="text-[#0A1931] font-bold mr-2">- 당첨자 발표:</span> 9.22(화 / 개별 메일 연락)</li>
+            </ul>
+          </div>
+
           <div className="reveal">
-            <h3 className="font-bold text-[14px] text-gray-500 mb-4 tracking-wide uppercase">공모전 혜택</h3>
-            <div className="flex flex-col border-t border-gray-100">
-              <div className="py-5 border-b border-gray-100 flex items-start gap-4">
-                <span className="font-bold text-[#0A1931] shrink-0 min-w-[55px] leading-snug">1등</span>
-                <div className="flex-1">
-                  <p className="font-bold text-gray-900 mb-1 leading-snug">일본 니가타현 왕복 항공권 & 숙박권 (1명)</p>
-                  <p className="text-[13px] text-gray-500 leading-relaxed break-keep">소설 속 사건의 배경이 되는 니가타현으로 떠나는 2인 여행을 지원합니다.</p>
-                </div>
+            <h3 className="font-bold text-[14px] text-red-600 mb-4 bg-red-50 p-3 rounded-lg text-center break-keep">※ 이벤트 ‘대상’ 선정 시 경품(‘일본 니가타’ 왕복 항공권) 수령 안내사항</h3>
+            
+            <div className="space-y-6 text-[13px] text-gray-600 leading-relaxed break-keep font-medium">
+              <div>
+                <p className="font-bold text-gray-800 mb-2">1. 항공권 예약 및 발송 안내</p>
+                <ul className="pl-3 space-y-1">
+                  <li>- 이벤트 경품: 대한항공 인천-니가타 노선 이코노미석</li>
+                  <li>- 예약 대행 파트너사: 본 이벤트의 항공권 발권 및 예약 관련 제반 업무는 ‘하나투어’를 통해 진행됩니다.</li>
+                  <li>- 당첨자 개별 연락: 당첨되신 분들께는 기재해주신 메일을 통해 개별적으로 연락을 드립니다.</li>
+                  <li>- 당첨 취소 규정: 당첨 상품 수취 거절, 영업일 기준 14일 이내 연락 불가 등의 사유 발생 시 당첨은 무효 처리됩니다.</li>
+                  <li>- 제세공과금 부담: 경품에 대한 제세공과금(22%)은 당첨자 본인 부담이며, 납부 절차는 개별 안내해 드립니다.</li>
+                </ul>
               </div>
-              <div className="py-5 border-b border-gray-100 flex items-start gap-4">
-                <span className="font-bold text-gray-400 shrink-0 min-w-[55px] leading-snug">2등</span>
-                <div className="flex-1">
-                  <p className="font-bold text-gray-800 leading-snug">갈릴레오 시리즈 세트 (5명)</p>
-                </div>
+              
+              <div>
+                <p className="font-bold text-gray-800 mb-2">2. 경품 제공 범위 및 유의사항</p>
+                <ul className="pl-3 space-y-1">
+                  <li>- 본 이벤트 경품은 ‘왕복 항공권(대한항공)’만 제공되는 상품으로, 가이드 및 현지 교통 등 부가 상품은 포함되지 않습니다.</li>
+                  <li>- 여행자보험 등 개인 안전에 관한 서비스는 제공되지 않습니다.</li>
+                  <li>- 항공권 외에 발생하는 부가 서비스 상품(좌석 업그레이드, 수하물 추가 등)은 별도 결제가 필요합니다.</li>
+                  <li>- 당첨자 본인과 동행인에 한하여 이용 가능합니다.</li>
+                </ul>
               </div>
-              <div className="py-5 border-b border-gray-100 flex items-start gap-4">
-                <span className="font-bold text-gray-400 shrink-0 min-w-[55px] leading-snug">인기상</span>
-                <div className="flex-1">
-                  <p className="font-bold text-gray-800 leading-snug">커피 기프티콘 (30명 추첨)</p>
-                </div>
+
+              <div>
+                <p className="font-bold text-gray-800 mb-2">3. 항공권 사용 기한 및 예약 조건</p>
+                <ul className="pl-3 space-y-1">
+                  <li>- 항공권 발권 마감기한: 본 항공권의 발권 마감기한은 [2026. 11. 30] 까지입니다.</li>
+                  <li>- 항공권 사용 기한: 2026. 10. 01(목) ~ 2027. 01. 31(토) / 최대 14일 체류 가능</li>
+                  <li>- 항공편의 예약 판매 및 상황 등에 따라 원하는 일정에 예약이 불가능할 수 있습니다.</li>
+                  <li>- 항공권 발권 후에는 예약 변경이 불가합니다.</li>
+                </ul>
               </div>
             </div>
           </div>
@@ -560,18 +639,17 @@
 
       const handleChange = (e) => {
         const { name, value } = e.target;
-        if (name === 'content' && value.length > 30) return;
+        
+        if (name === 'content') {
+          if (value.length > 30) return;
+          // 엔터(행갈이) 입력 시 최대 2줄까지만 허용
+          const lines = value.split('\n');
+          if (lines.length > 2) return; 
+        }
+        
         if (name === 'password' && value.length > 4) return;
         if (name === 'nickname' && value.length > 8) return;
         setForm(p => ({ ...p, [name]: value }));
-      };
-
-      const handleEmailBlur = () => {
-        if (!form.email) return;
-        const existingEntry = entries.find(ent => ent.email === form.email);
-        if (existingEntry) {
-          setForm(p => ({ ...p, nickname: existingEntry.nickname }));
-        }
       };
 
       const handleSubmit = async (e) => {
@@ -581,15 +659,12 @@
         if (form.password.length !== 4 || isNaN(form.password)) return alert("비밀번호는 숫자 4자리로 입력해주세요.");
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return alert("올바른 이메일 형식을 입력해주세요.");
         if (bannedEmails.includes(form.email)) return alert("참여가 제한된 계정입니다.");
-        if (entries.filter(ent => ent.email === form.email).length >= 3) return alert("최대 3번까지만 응모 가능합니다.");
+        
+        // 1계정 당 1번 응모 제한으로 변경
+        if (entries.some(ent => ent.email === form.email)) return alert("한 개의 이메일 당 한 번만 응모 가능합니다. 기존에 작성하신 글은 전체보기 메뉴의 '내 글 찾기'를 통해 수정 가능합니다.");
         
         if (BAD_WORDS.some(w => form.nickname.includes(w))) return alert("닉네임에 부적절한 단어가 포함되어 있습니다.");
         if (BAD_WORDS.some(w => form.content.includes(w))) return alert("응모 내용에 부적절한 단어가 포함되어 있습니다.");
-
-        const existingEmailEntry = entries.find(ent => ent.email === form.email);
-        if (existingEmailEntry && existingEmailEntry.nickname !== form.nickname) {
-          return alert(`동일한 이메일은 기존 닉네임(${existingEmailEntry.nickname})으로만 참여 가능합니다.`);
-        }
 
         const existingNicknameEntry = entries.find(ent => ent.nickname === form.nickname);
         if (existingNicknameEntry && existingNicknameEntry.email !== form.email) {
@@ -615,7 +690,7 @@
           <div className="mb-10 pb-4 border-b border-gray-100 reveal">
             <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight mb-2">카피 공모전 응모하기</h2>
             <p className="text-[13px] text-gray-500 font-medium leading-relaxed break-keep">
-              '나만의 한 수'가 담긴 카피를 응모해주세요. (공백 포함 30자 이하)
+              '나만의 한 수'가 담긴 카피를 응모해주세요. (공백 포함 30자 이하 / 최대 2행)
             </p>
           </div>
 
@@ -639,12 +714,12 @@
 
             <div>
               <label className="block text-[12px] font-bold text-gray-800 mb-2">연락받을 이메일 주소</label>
-              <input type="email" name="email" value={form.email} onChange={handleChange} onBlur={handleEmailBlur} placeholder="이메일 주소 입력" className="w-full p-4 bg-white border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
+              <input type="email" name="email" value={form.email} onChange={handleChange} placeholder="이메일 주소 입력" className="w-full p-4 bg-white border border-gray-200 rounded-none text-[14px] outline-none focus:border-[#0A1931] smooth-transition" />
             </div>
 
             <div>
               <div className="flex justify-between items-end mb-2">
-                <label className="block text-[12px] font-bold text-gray-800">응모 카피 내용</label>
+                <label className="block text-[12px] font-bold text-gray-800">응모 카피 내용 (엔터 줄바꿈 2행까지 가능)</label>
                 <span className={`text-[11px] font-bold ${form.content.length >= 30 ? 'text-red-500' : 'text-gray-400'}`}>{form.content.length} / 30자</span>
               </div>
               <textarea name="content" value={form.content} onChange={handleChange} placeholder="소설의 매력을 담은 한 줄을 적어주세요." rows="3" className="w-full p-4 bg-white border border-gray-200 rounded-none text-[15px] leading-relaxed outline-none focus:border-[#0A1931] smooth-transition resize-none" />
@@ -654,7 +729,7 @@
               <ul className="text-[11px] text-gray-500 space-y-2 font-medium tracking-tight leading-relaxed">
                 <li>• 이메일 주소는 당첨 시 연락 수신이 가능한 주소로 입력해주세요.</li>
                 <li>• 당첨시 이메일 주소로 당첨 안내 메일이 발송됩니다.</li>
-                <li>• 한 개의 이메일 주소로 총 세 번 응모가 가능합니다. (기존 닉네임 연동)</li>
+                <li>• 한 개의 이메일 주소 당 딱 한 번만 응모 가능합니다.</li>
                 <li>• 입력한 이메일 주소는 관리자에게만 공개 됩니다.</li>
                 <li><strong className="text-red-500">• 부적절한 언어 및 타인을 비방하는 문구 사용 시, 관리자에 의해 삭제될 수 있습니다.</strong></li>
               </ul>
@@ -723,12 +798,11 @@
 
           <div className="flex flex-col mb-10 border-b border-gray-100 reveal">
             {currentItems.length === 0 ? <div className="text-center text-sm text-gray-400 py-16">작성된 글이 없습니다.</div>
-              : currentItems.map((entry, idx) => (
+              : currentItems.map((entry) => (
                   <EntryRow 
                     key={entry.id} 
                     entry={entry} 
                     toggleLike={toggleLike} 
-                    rank={sortType === 'likes' ? null : (currentPage - 1) * itemsPerPage + idx + 1}
                     onPreview={(content) => setPreviewModalContent(content)} 
                   />
                 ))
@@ -784,6 +858,10 @@
       
       const handleUpdate = async () => {
         if(editContent.trim().length === 0 || editContent.length > 30) return alert('1자 이상, 30자 이내로 작성해주세요.');
+        
+        const lines = editContent.split('\n');
+        if (lines.length > 2) return alert('최대 2행까지만 입력 가능합니다.');
+
         if (BAD_WORDS.some(w => editContent.includes(w))) return alert("부적절한 단어가 포함되어 있습니다. 내용을 수정해주세요.");
         
         await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', editTarget.id), { content: editContent.trim() });
@@ -818,7 +896,7 @@
                       </div>
                     ) : (
                       <div>
-                        <p className="text-[15px] font-medium text-gray-900 break-keep leading-relaxed">{ent.content}</p>
+                        <p className="text-[15px] font-medium text-gray-900 break-keep leading-relaxed whitespace-pre-wrap">{ent.content}</p>
                         <div className="flex justify-between items-center mt-4">
                           <span className="text-[12px] text-gray-400">추천수 {ent.likes}</span>
                           <div className="flex gap-4">
@@ -838,27 +916,25 @@
     }
 
     // ==========================================
-    // 5. Book View (도서 안내)
+    // 5. Book View (도서 안내 - 3D 도입)
     // ==========================================
     function BookView({ trackStoreClick }) {
       useReveal();
       return (
-        <div className="px-6 py-10 animate-in fade-in duration-500">
-          <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight mb-8 pb-4 border-b border-gray-100 reveal">도서 안내</h2>
+        <div className="px-6 py-10 animate-in fade-in duration-500 bg-[#F8F9FA] min-h-screen">
+          <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight mb-8 pb-4 border-b border-gray-200 reveal">도서 안내</h2>
           
-          <div className="border border-gray-100 mb-10 bg-white reveal">
-             <div className="w-full aspect-[3/4] bg-[#0A1931] flex flex-col items-center justify-center p-8 relative overflow-hidden">
-                <div className="absolute w-64 h-64 bg-blue-500/20 rounded-full blur-3xl"></div>
-                <p className="text-white/80 text-[12px] font-bold tracking-[0.3em] mb-4 relative z-10 uppercase">히가시노 게이고 신작</p>
-                <h3 className="text-white text-4xl font-bold tracking-tighter relative z-10 text-center leading-tight">투명한<br/>나선</h3>
-             </div>
-             <div className="p-8 text-center">
-                <h3 className="font-bold text-[17px] text-[#0A1931] mb-3 tracking-tight">천재 물리학자가 평생 숨겨 온 비밀!</h3>
-                <p className="text-[14px] text-gray-600 leading-relaxed font-medium break-keep">"유카와 마나부, 너의 죄를 사하노라!"<br/><br/>갈릴레오 시리즈 최신작. 더욱 깊어진 미스터리와 감동이 소용돌이치는 걸작. 얽히고설킨 혈연과 인연의 비밀 속으로 초대합니다.</p>
-             </div>
+          {/* 3D 책 돌려보기 */}
+          <div className="reveal">
+            <Book3D />
+          </div>
+
+          <div className="bg-white p-8 text-center rounded-2xl shadow-sm border border-gray-100 mb-10 reveal">
+             <h3 className="font-bold text-[17px] text-[#0A1931] mb-3 tracking-tight">천재 물리학자가 평생 숨겨 온 비밀!</h3>
+             <p className="text-[14px] text-gray-600 leading-relaxed font-medium break-keep">"유카와 마나부, 너의 죄를 사하노라!"<br/><br/>갈릴레오 시리즈 최신작. 더욱 깊어진 미스터리와 감동이 소용돌이치는 걸작. 얽히고설킨 혈연과 인연의 비밀 속으로 초대합니다.</p>
           </div>
           
-          <div className="px-1 py-4 bg-white border-t border-gray-100 pt-8 reveal">
+          <div className="px-1 py-4 bg-transparent pt-4 reveal">
             <h3 className="font-bold text-[16px] text-[#0A1931] tracking-tight mb-6 text-center">도서 자세히 보기</h3>
             <div className="grid grid-cols-3 gap-3">
               <BookStoreSquare storeId="kyobo" img="ci_kyobo.png" url="https://product.kyobobook.co.kr/detail/S000220515357" name="교보문고" trackStoreClick={trackStoreClick} />
@@ -1045,7 +1121,8 @@
                   </div>
                   <span className="text-[12px] font-bold text-[#0A1931] flex items-center gap-1"><Icon name="heart" size={12} fill="currentColor"/> {entry.likes}</span>
                 </div>
-                <p className="text-[14px] font-medium text-gray-800 break-keep leading-relaxed bg-gray-50 p-4 mb-4">{entry.content}</p>
+                {/* 줄바꿈(엔터)이 관리자 화면에서도 보이도록 whitespace-pre-wrap 적용 */}
+                <p className="text-[14px] font-medium text-gray-800 break-keep leading-relaxed bg-gray-50 p-4 mb-4 whitespace-pre-wrap">{entry.content}</p>
                 <div className="flex gap-4">
                   <button onClick={() => handleDelete(entry.id)} className="text-[12px] font-bold text-gray-500 flex items-center gap-1 hover:text-gray-900"><Icon name="trash2" size={14}/> 삭제</button>
                   <button onClick={() => handleBanAndDel(entry)} className="text-[12px] font-bold text-red-400 flex items-center gap-1 hover:text-red-600"><Icon name="ban" size={14}/> 차단+삭제</button>
