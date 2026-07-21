@@ -132,10 +132,10 @@
     function BookCoverPreviewUI({ content }) {
       return (
         <div className="relative w-full max-w-[280px] mx-auto shadow-xl border border-gray-200 bg-white">
-          <img src="book_copy_2.jpg" alt="도서 표지 띠지 미리보기" className="w-full h-auto block" 
+          <img src="book_copy.png" alt="도서 표지 띠지 미리보기" className="w-full h-auto block" 
                onError={(e) => { 
                  e.target.style.display='none'; 
-                 e.target.insertAdjacentHTML('afterend', '<div class="w-full aspect-[2/3] bg-gray-200 flex items-center justify-center text-xs text-gray-500">book_copy_2.jpg 필요</div>'); 
+                 e.target.insertAdjacentHTML('afterend', '<div class="w-full aspect-[2/3] bg-gray-200 flex items-center justify-center text-xs text-gray-500">book_copy.png 필요</div>'); 
                }} />
           
           {/* 하단 핑크 띠지 영역 텍스트 절대좌표 매핑 
