@@ -363,7 +363,7 @@
                   <div className="flex flex-col p-6 space-y-6 mt-4">
                     <SidebarLink label="홈" view="home" current={currentView} onClick={handleNavClick} />
                     <SidebarLink label="이벤트 안내" view="info" current={currentView} onClick={handleNavClick} />
-                    <SidebarLink label="참여하기" view="participate" current={currentView} onClick={handleNavClick} />
+                    <SidebarLink label="응모하기" view="participate" current={currentView} onClick={handleNavClick} />
                     <SidebarLink label="응모작 보기" view="list" current={currentView} onClick={handleNavClick} />
                     <SidebarLink label="도서 안내" view="book" current={currentView} onClick={handleNavClick} />
                   </div>
@@ -466,12 +466,30 @@
         startAutoPlay();
       };
 
-      const topEntries = useMemo(() => {
+      // [수정된 부분] 추천순 정렬 시 실시간 순서 변경 방지
+      const [fixedTopEntries, setFixedTopEntries] = useState([]);
+      const [prevSortType, setPrevSortType] = useState(sortType);
+
+      useEffect(() => {
         const arr = [...entries].filter(e => (e.reports || 0) < 10);
-        if (sortType === 'likes') arr.sort((a,b) => b.likes - a.likes || b.createdAt - a.createdAt);
-        else arr.sort((a,b) => b.createdAt - a.createdAt);
-        return arr.slice(0, 5);
-      }, [entries, sortType]);
+        
+        if (sortType === 'likes') {
+          // 정렬 기준이 방금 'likes'로 바뀌었거나, fixedTopEntries가 비어있을 때만 업데이트
+          if (prevSortType !== 'likes' || fixedTopEntries.length === 0) {
+            arr.sort((a,b) => b.likes - a.likes || b.createdAt - a.createdAt);
+            setFixedTopEntries(arr.slice(0, 5));
+          }
+        } else {
+          // 최신순은 실시간으로 반영
+          arr.sort((a,b) => b.createdAt - a.createdAt);
+          setFixedTopEntries(arr.slice(0, 5));
+        }
+        setPrevSortType(sortType);
+      }, [entries, sortType, prevSortType]); 
+      // useEffect 안에서 fixedTopEntries를 제외하여 실시간 업데이트로 인한 무한루프/재정렬 방지
+
+      // topEntries 대신 fixedTopEntries를 사용하도록 매핑 변수 할당
+      const topEntries = fixedTopEntries;
 
       return (
         <div className="animate-in fade-in duration-500">
@@ -518,7 +536,7 @@
           
           <div className="px-6 py-6 border-b border-gray-100 bg-white">
             <button onClick={() => setView('participate')} className="w-full bg-[#0A1931] text-white py-4 rounded-full font-bold text-[15px] shadow-md hover:bg-[#1a2c4e] hover:shadow-lg smooth-transition tracking-wide">
-              이벤트 참여하기
+              이벤트 응모하기
             </button>
           </div>
 
@@ -664,7 +682,7 @@
     }
 
     // ==========================================
-    // 3. Participate View (참여하기)
+    // 3. Participate View (응모하기)
     // ==========================================
     function ParticipateView({ user, entries, bannedEmails, setView }) {
       useReveal();
@@ -811,13 +829,29 @@
       const itemsPerPage = 10;
       const pagesPerBlock = 5; 
       
-      const sortedEntries = useMemo(() => {
+      // [수정된 부분] 추천순 정렬 시 실시간 순서 변경 방지 (전체 리스트용)
+      const [fixedSortedEntries, setFixedSortedEntries] = useState([]);
+      const [prevListSortType, setPrevListSortType] = useState(sortType);
+
+      useEffect(() => {
         const validEntries = [...entries].filter(e => (e.reports || 0) < 10);
         
-        if (sortType === 'likes') validEntries.sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt);
-        else validEntries.sort((a, b) => b.createdAt - a.createdAt);
-        return validEntries;
-      }, [entries, sortType]);
+        if (sortType === 'likes') {
+          // 정렬 기준이 방금 'likes'로 바뀌었거나, 최초 로드 시 고정
+          if (prevListSortType !== 'likes' || fixedSortedEntries.length === 0) {
+            validEntries.sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt);
+            setFixedSortedEntries(validEntries);
+          }
+        } else {
+          // 최신순은 실시간으로 반영
+          validEntries.sort((a, b) => b.createdAt - a.createdAt);
+          setFixedSortedEntries(validEntries);
+        }
+        setPrevListSortType(sortType);
+      }, [entries, sortType, prevListSortType]);
+
+      // sortedEntries 대신 fixedSortedEntries를 사용하도록 매핑 변수 할당
+      const sortedEntries = fixedSortedEntries;
 
       const totalPages = Math.ceil(sortedEntries.length / itemsPerPage) || 1;
       const currentItems = sortedEntries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
