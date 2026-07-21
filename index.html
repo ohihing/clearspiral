@@ -733,7 +733,7 @@
       useReveal();
       const [form, setForm] = useState({ nickname: '', email: '', password: '', content: '' });
       const [loading, setLoading] = useState(false);
-      const [isModalOpen, setIsModalOpen] = useState(false); // ★ 모달 상태 추가
+      const [isModalOpen, setIsModalOpen] = useState(false); 
 
       const handleChange = (e) => {
         const { name, value } = e.target;
@@ -791,7 +791,6 @@
       return (
         <div className="px-6 py-10 animate-in fade-in duration-500">
           <div className="mb-10 pb-4 border-b border-gray-100 reveal">
-            {/* ★ 변경된 타이틀 영역 (내 글 찾기 버튼 포함) */}
             <div className="flex justify-between items-end mb-2">
               <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight">카피 공모전 응모하기</h2>
               <button type="button" onClick={() => setIsModalOpen(true)} className="flex items-center gap-1.5 text-[12px] font-bold text-gray-500 hover:text-[#0A1931] smooth-transition pb-0.5">
@@ -805,11 +804,6 @@
 
           <form onSubmit={handleSubmit} className="space-y-6 reveal">
             
-            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 mb-8">
-               <h4 className="text-[12px] font-bold text-gray-500 mb-4 text-center tracking-wide">내 카피 가상 적용 미리보기</h4>
-               <BookCoverPreviewUI content={form.content} />
-            </div>
-
             <div className="flex gap-4">
               <div className="flex-1">
                 <label className="block text-[12px] font-bold text-gray-800 mb-2">닉네임 <span className="text-gray-400 font-normal ml-1">(최대 8자)</span></label>
@@ -834,9 +828,15 @@
               <textarea name="content" value={form.content} onChange={handleChange} placeholder="소설의 매력을 담은 한 줄을 적어주세요." rows="3" className="w-full p-4 bg-white border border-gray-200 rounded-none text-[15px] leading-relaxed outline-none focus:border-[#0A1931] smooth-transition resize-none" />
             </div>
 
+            {/* ★ 미리보기 영역을 입력창(textarea) 바로 아래로 이동 */}
+            <div className="bg-gray-50 p-6 rounded-2xl border border-gray-200 mt-2 mb-8">
+               <h4 className="text-[12px] font-bold text-gray-500 mb-4 text-center tracking-wide">내 카피 가상 적용 미리보기</h4>
+               <BookCoverPreviewUI content={form.content} />
+            </div>
+
             <div className="pt-4">
               <ul className="text-[11px] text-gray-500 space-y-2 font-medium tracking-tight leading-relaxed">
-                <li>• 이메일 주소는 당첨 시 연락 수신이 가능한 주소로 입력해주세요.</li>
+                <li>• 이메일 주소는 반드시 당첨 연락 수신이 가능한 주소로 입력해주세요.</li>
                 <li>• 당첨시 이메일 주소로 당첨 안내 메일이 발송됩니다.</li>
                 <li>• 한 개의 이메일 계정당 1회만 응모 가능합니다. (기존 닉네임 연동)</li>
                 <li>• 입력한 이메일 주소는 관리자에게만 공개 됩니다.</li>
@@ -849,7 +849,6 @@
             </button>
           </form>
           
-          {/* ★ 이 부분 추가됨 (모달 창 컴포넌트 렌더링) */}
           {isModalOpen && <MyPostModal entries={entries} onClose={() => setIsModalOpen(false)} />}
           
         </div>
