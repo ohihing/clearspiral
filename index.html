@@ -466,30 +466,37 @@
         startAutoPlay();
       };
 
-      // [수정된 부분] 추천순 정렬 시 실시간 순서 변경 방지
-      const [fixedTopEntries, setFixedTopEntries] = useState([]);
-      const [prevSortType, setPrevSortType] = useState(sortType);
+      // [수정된 부분] 추천순 정렬 시 순서(ID)는 고정하되, 좋아요 숫자는 실시간 반영
+      const [frozenIds, setFrozenIds] = useState(null);
 
       useEffect(() => {
-        const arr = [...entries].filter(e => (e.reports || 0) < 10);
-        
         if (sortType === 'likes') {
-          // 정렬 기준이 방금 'likes'로 바뀌었거나, fixedTopEntries가 비어있을 때만 업데이트
-          if (prevSortType !== 'likes' || fixedTopEntries.length === 0) {
-            arr.sort((a,b) => b.likes - a.likes || b.createdAt - a.createdAt);
-            setFixedTopEntries(arr.slice(0, 5));
+          // 추천순 탭을 눌렀고, 아직 순서가 고정되지 않았다면 현재 순서의 ID만 추출해서 고정
+          if (frozenIds === null && entries.length > 0) {
+            const sorted = [...entries]
+              .filter(e => (e.reports || 0) < 10)
+              .sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt)
+              .slice(0, 5);
+            setFrozenIds(sorted.map(e => e.id));
           }
         } else {
-          // 최신순은 실시간으로 반영
-          arr.sort((a,b) => b.createdAt - a.createdAt);
-          setFixedTopEntries(arr.slice(0, 5));
+          // 최신순일 때는 고정 해제
+          setFrozenIds(null);
         }
-        setPrevSortType(sortType);
-      }, [entries, sortType, prevSortType]); 
-      // useEffect 안에서 fixedTopEntries를 제외하여 실시간 업데이트로 인한 무한루프/재정렬 방지
+      }, [sortType, entries, frozenIds]); 
 
-      // topEntries 대신 fixedTopEntries를 사용하도록 매핑 변수 할당
-      const topEntries = fixedTopEntries;
+      const topEntries = useMemo(() => {
+        const validEntries = [...entries].filter(e => (e.reports || 0) < 10);
+        
+        if (sortType === 'likes' && frozenIds !== null) {
+          // 고정된 ID 배열을 바탕으로 껍데기를 세우고, 알맹이(최신 데이터)를 채워 넣음
+          const entryMap = new Map(validEntries.map(e => [e.id, e]));
+          return frozenIds.map(id => entryMap.get(id)).filter(Boolean);
+        }
+        
+        // 최신순일 때는 실시간 데이터 그대로 순서 정렬 반영
+        return validEntries.sort((a, b) => b.createdAt - a.createdAt).slice(0, 5);
+      }, [entries, sortType, frozenIds]);
 
       return (
         <div className="animate-in fade-in duration-500">
@@ -829,29 +836,34 @@
       const itemsPerPage = 10;
       const pagesPerBlock = 5; 
       
-      // [수정된 부분] 추천순 정렬 시 실시간 순서 변경 방지 (전체 리스트용)
-      const [fixedSortedEntries, setFixedSortedEntries] = useState([]);
-      const [prevListSortType, setPrevListSortType] = useState(sortType);
+      // [수정된 부분] 추천순 정렬 시 순서(ID)는 고정하되, 좋아요 숫자는 실시간 반영 (전체 리스트용)
+      const [frozenIds, setFrozenIds] = useState(null);
 
       useEffect(() => {
-        const validEntries = [...entries].filter(e => (e.reports || 0) < 10);
-        
         if (sortType === 'likes') {
-          // 정렬 기준이 방금 'likes'로 바뀌었거나, 최초 로드 시 고정
-          if (prevListSortType !== 'likes' || fixedSortedEntries.length === 0) {
-            validEntries.sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt);
-            setFixedSortedEntries(validEntries);
+          if (frozenIds === null && entries.length > 0) {
+            const sorted = [...entries]
+              .filter(e => (e.reports || 0) < 10)
+              .sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt);
+            setFrozenIds(sorted.map(e => e.id));
           }
         } else {
-          // 최신순은 실시간으로 반영
-          validEntries.sort((a, b) => b.createdAt - a.createdAt);
-          setFixedSortedEntries(validEntries);
+          setFrozenIds(null);
         }
-        setPrevListSortType(sortType);
-      }, [entries, sortType, prevListSortType]);
+      }, [sortType, entries, frozenIds]);
 
-      // sortedEntries 대신 fixedSortedEntries를 사용하도록 매핑 변수 할당
-      const sortedEntries = fixedSortedEntries;
+      const sortedEntries = useMemo(() => {
+        const validEntries = [...entries].filter(e => (e.reports || 0) < 10);
+        
+        if (sortType === 'likes' && frozenIds !== null) {
+          // 고정된 ID 순서를 바탕으로 최신 좋아요 데이터를 가져옴
+          const entryMap = new Map(validEntries.map(e => [e.id, e]));
+          return frozenIds.map(id => entryMap.get(id)).filter(Boolean);
+        } 
+        
+        // 최신순일 때는 실시간 정렬
+        return validEntries.sort((a, b) => b.createdAt - a.createdAt);
+      }, [entries, sortType, frozenIds]);
 
       const totalPages = Math.ceil(sortedEntries.length / itemsPerPage) || 1;
       const currentItems = sortedEntries.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
