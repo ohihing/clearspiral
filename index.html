@@ -107,6 +107,9 @@
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
     import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, setDoc, increment } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+    
+    // ★ 리스트 애니메이션을 위한 라이브러리 추가
+    import autoAnimate from "https://cdn.jsdelivr.net/npm/@formkit/auto-animate@0.8.2/+esm";
 
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
 
@@ -418,7 +421,7 @@
       useReveal(); 
       const images = [{ id: 1, src: "001.png" }, { id: 2, src: "002.png" }, { id: 3, src: "003.png" }, { id: 4, src: "004.png" }];
       const [currentSlide, setCurrentSlide] = useState(0);
-      const [isPaused, setIsPaused] = useState(false); // 멈춤 상태 추가
+      const [isPaused, setIsPaused] = useState(false); 
       const [isDragging, setIsDragging] = useState(false);
       const [dragOffset, setDragOffset] = useState(0);
       const [sortType, setSortType] = useState('recent'); 
@@ -426,10 +429,17 @@
 
       const startX = useRef(0);
       const autoPlayRef = useRef(null);
+      const listRef = useRef(null); // ★ 애니메이션을 위한 컨테이너 ref
+
+      // ★ DOM 변화를 감지하여 자동으로 애니메이션 적용
+      useEffect(() => {
+        if (listRef.current) {
+          autoAnimate(listRef.current, { duration: 300, easing: 'ease-in-out' });
+        }
+      }, []);
 
       const startAutoPlay = useCallback(() => {
         if (autoPlayRef.current) clearInterval(autoPlayRef.current);
-        // 정지(isPaused) 상태가 아닐 때만 자동 롤링 실행
         if (!isPaused) {
           autoPlayRef.current = setInterval(() => setCurrentSlide(prev => (prev + 1) % images.length), 5000);
         }
@@ -482,14 +492,12 @@
                     alt={`배너 ${idx + 1}`} 
                     className="w-full h-full object-cover pointer-events-none" 
                     onError={(e) => { e.target.style.display='none'; }} 
-                    // PC에서 이미지가 흐려지거나 깨지는 것을 방지하는 스타일 추가
                     style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitFontSmoothing: 'antialiased' }} 
                   />
                 </div>
               ))}
             </div>
             
-            {/* 하단 네비게이션: 재생/정지 버튼 + 원형 점 */}
             <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-3 z-20">
               <button 
                 onClick={() => setIsPaused(!isPaused)} 
@@ -504,7 +512,7 @@
                     key={idx} 
                     onClick={() => { 
                       setCurrentSlide(idx); 
-                      setIsPaused(true); // 직접 클릭 시 읽으려는 의도이므로 롤링을 멈춤
+                      setIsPaused(true); 
                     }} 
                     className={`transition-all duration-300 rounded-full ${idx === currentSlide ? 'w-2 h-2 bg-white' : 'w-2 h-2 bg-white/50'}`} 
                   />
@@ -513,7 +521,6 @@
             </div>
           </div>
           
-          {/* (이하 topEntries 등 기존 코드 유지) */}
           <div className="px-6 py-6 border-b border-gray-100 bg-white">
             <button onClick={() => setView('participate')} className="w-full bg-[#0A1931] text-white py-4 rounded-full font-bold text-[15px] shadow-md hover:bg-[#1a2c4e] hover:shadow-lg smooth-transition tracking-wide">
               이벤트 참여하기
@@ -523,7 +530,7 @@
           <div className="px-6 py-10 border-b border-gray-100 bg-white reveal">
             <div className="flex items-end justify-between mb-4">
               <h3 className="font-bold text-[16px] text-[#0A1931] tracking-tight">실시간 주요 응모작</h3>
-              <button onClick={() => setView('list')} className="text-[12px] font-semibold text-gray-400 hover:text-[#0A1931] smooth-transition pb-0.5">전체보기</button>
+              <button onClick={() => setView('list')} className="text-[12px] font-bold text-gray-400 hover:text-[#0A1931] smooth-transition pb-0.5">전체보기</button>
             </div>
             
             <div className="flex gap-4 mb-6 border-b border-gray-100">
@@ -531,7 +538,8 @@
               <button onClick={() => setSortType('likes')} className={`text-[12px] font-bold smooth-transition pb-2 border-b-2 -mb-[1px] ${sortType === 'likes' ? 'text-[#0A1931] border-[#0A1931]' : 'text-gray-400 border-transparent hover:text-gray-800'}`}>추천순</button>
             </div>
 
-            <div className="flex flex-col">
+            {/* ★ ref={listRef} 적용됨 */}
+            <div ref={listRef} className="flex flex-col">
               {topEntries.length === 0 ? (
                 <div className="text-center text-sm text-gray-400 py-12">아직 응모작이 없습니다.</div>
               ) : (
@@ -540,7 +548,7 @@
                     key={entry.id} 
                     entry={entry} 
                     toggleLike={toggleLike} 
-                    rank={null} /* 순위 표시 완벽 제거 */
+                    rank={null}
                     onPreview={(content) => setPreviewModalContent(content)} 
                   />
                 ))
@@ -571,72 +579,6 @@
       );
     }
 
-    function EntryRow({ entry, toggleLike, rank, onPreview }) {
-      const [isLiked, setIsLiked] = useState(!!localStorage.getItem(`liked_${entry.id}`));
-      const [animate, setAnimate] = useState(false);
-
-      const handleLikeClick = () => {
-        const currentlyLiked = isLiked;
-        setIsLiked(!currentlyLiked);
-        if (!currentlyLiked) { 
-          setAnimate(true); 
-          setTimeout(() => setAnimate(false), 300); 
-          localStorage.setItem(`liked_${entry.id}`, 'true');
-        } else {
-          localStorage.removeItem(`liked_${entry.id}`);
-        }
-        toggleLike(entry.id, currentlyLiked);
-      };
-
-      const handleReportClick = async () => {
-        if (localStorage.getItem(`reported_${entry.id}`)) return alert("이미 신고한 응모작입니다.");
-        if (window.confirm("이 응모작을 신고하시겠습니까? 누적 10회 이상 신고 시 자동으로 블라인드 처리됩니다.")) {
-          localStorage.setItem(`reported_${entry.id}`, 'true');
-          try {
-            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', entry.id), { 
-              reports: increment(1) 
-            });
-            alert("신고가 정상적으로 접수되었습니다.");
-          } catch(e) { console.error("Report failed:", e); }
-        }
-      };
-
-      return (
-        <div className="py-5 border-t border-gray-100 flex justify-between items-start gap-4 group">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              {rank && <span className="text-[11px] font-bold text-[#0A1931] tracking-tight">{rank}.</span>}
-              <span className="font-bold text-gray-800 text-[13px]">{entry.nickname}</span>
-            </div>
-            <p className="text-[#333] text-[15px] leading-[1.6] font-medium tracking-tight whitespace-pre-wrap break-all">{entry.content}</p>
-            
-            <div className="mt-3 flex items-center gap-3">
-              {onPreview && (
-                <button onClick={() => onPreview(entry.content)} className="text-[10px] font-bold text-[#0A1931] bg-blue-50 px-2 py-1 rounded-md hover:bg-blue-100 smooth-transition flex items-center gap-1">
-                  <Icon name="eye" size={12} /> 표지 미리보기
-                </button>
-              )}
-              <button onClick={handleReportClick} className="text-[10px] font-bold text-gray-400 hover:text-red-500 smooth-transition flex items-center gap-1">
-                <Icon name="alertCircle" size={12} /> 신고
-              </button>
-            </div>
-          </div>
-          <button onClick={handleLikeClick} className="flex flex-col items-center justify-center min-w-[48px] pt-1">
-            <Icon name="heart" size={20} fill={isLiked ? "currentColor" : "none"} className={`${isLiked ? 'text-[#0A1931]' : 'text-gray-300'} ${animate ? 'animate-heart' : ''} mb-1 smooth-transition`} />
-            <span className={`text-[11px] font-bold ${isLiked ? 'text-[#0A1931]' : 'text-gray-400'}`}>{entry.likes || 0}</span>
-          </button>
-        </div>
-      );
-    }
-
-    function BookStoreSquare({ storeId, img, url, name, trackStoreClick }) {
-      return (
-        <a href={url} target="_blank" rel="noreferrer" onClick={() => trackStoreClick(storeId)} className="flex items-center justify-center py-4 px-2 border border-gray-200 bg-white hover:bg-gray-50 smooth-transition rounded-xl">
-          <img src={img} alt={name} className="h-5 object-contain smooth-transition" onError={(e) => { e.target.style.display='none'; }} />
-        </a>
-      );
-    }
-
     // ==========================================
     // 2. Info View (이벤트 안내)
     // ==========================================
@@ -652,7 +594,7 @@
               히가시노 게이고 대표 시리즈 최신작<br/>
               『투명한 나선』에 들어갈 새로운 카피를 써 주세요.<br/><br/>
               ‘나는 이 책을 이렇게 말하고 싶다!’<br/>
-              띠지 카피 공모전에 많은 관심과 참여를 부탁드립니다.<br/>
+              띠지 카피 공모전에 많은 관심과 참여를 부탁드립니다.<br/><br/>
               * 반드시 연락 가능한 이메일 주소로만 응모해 주세요.
             </p>
           </div>
@@ -868,6 +810,15 @@
       const [isModalOpen, setIsModalOpen] = useState(false);
       const [previewModalContent, setPreviewModalContent] = useState(null);
       
+      const listRef = useRef(null); // ★ 애니메이션을 위한 컨테이너 ref
+
+      // ★ DOM 변화를 감지하여 자동으로 애니메이션 적용
+      useEffect(() => {
+        if (listRef.current) {
+          autoAnimate(listRef.current, { duration: 300, easing: 'ease-in-out' });
+        }
+      }, []);
+      
       const itemsPerPage = 10;
       const pagesPerBlock = 5; 
       
@@ -901,7 +852,6 @@
             </button>
           </div>
 
-          {/* ★ 안내 문구가 추가된 영역입니다 ★ */}
           <div className="bg-gray-50 p-4 rounded-xl mb-6 flex items-start gap-2.5 reveal border border-gray-100">
              <Icon name="alertCircle" size={14} className="text-gray-400 shrink-0 mt-0.5" />
              <ul className="text-[11px] text-gray-500 font-medium leading-relaxed space-y-1.5 tracking-tight break-keep">
@@ -915,7 +865,8 @@
             <button onClick={() => { setSortType('likes'); setCurrentPage(1); }} className={`text-[13px] font-bold smooth-transition pb-3 border-b-2 -mb-[1px] ${sortType === 'likes' ? 'text-[#0A1931] border-[#0A1931]' : 'text-gray-400 border-transparent hover:text-gray-800'}`}>추천순</button>
           </div>
 
-          <div className="flex flex-col mb-10 border-b border-gray-100 reveal">
+          {/* ★ ref={listRef} 적용됨 */}
+          <div ref={listRef} className="flex flex-col mb-10 border-b border-gray-100 reveal">
             {currentItems.length === 0 ? <div className="text-center text-sm text-gray-400 py-16">작성된 글이 없습니다.</div>
               : currentItems.map((entry, idx) => (
                   <EntryRow 
@@ -954,84 +905,6 @@
               </div>
             </div>
           )}
-        </div>
-      );
-    }
-
-    function MyPostModal({ entries, onClose }) {
-      const [authForm, setAuthForm] = useState({ email: '', password: '' });
-      const [myEntries, setMyEntries] = useState(null);
-      const [editTarget, setEditTarget] = useState(null);
-      const [editContent, setEditContent] = useState('');
-
-      const handleSearch = (e) => {
-        e.preventDefault();
-        setMyEntries(entries.filter(ent => ent.email === authForm.email && ent.password === authForm.password));
-      };
-      
-      const handleDelete = async (id) => {
-        if(window.confirm("정말 삭제하시겠습니까?")) {
-          await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', id));
-          setMyEntries(prev => prev.filter(e => e.id !== id));
-        }
-      };
-      
-      const handleUpdate = async () => {
-        if(editContent.trim().length === 0 || editContent.length > 30) return alert('1자 이상, 30자 이내로 작성해주세요.');
-        if (BAD_WORDS.some(w => editContent.includes(w))) return alert("부적절한 단어가 포함되어 있습니다. 내용을 수정해주세요.");
-        
-        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', editTarget.id), { content: editContent.trim() });
-        setMyEntries(prev => prev.map(e => e.id === editTarget.id ? { ...e, content: editContent.trim() } : e));
-        setEditTarget(null);
-      };
-
-      return (
-        <div className="fixed inset-0 bg-white/95 backdrop-blur-sm z-[100] flex flex-col p-6 animate-in fade-in duration-200">
-          <div className="flex justify-end pt-4">
-            <button onClick={onClose} className="text-gray-500 hover:text-gray-900"><Icon name="x" size={32}/></button>
-          </div>
-          <div className="w-full max-w-sm mx-auto mt-10">
-            <h3 className="font-bold text-[22px] text-[#0A1931] mb-8 tracking-tight">내 작성 글 찾기</h3>
-            {myEntries === null ? (
-              <form onSubmit={handleSearch} className="space-y-4">
-                <input type="email" value={authForm.email} onChange={e=>setAuthForm(p=>({...p, email:e.target.value}))} placeholder="이메일 주소" className="w-full p-4 border-b border-gray-300 text-[15px] outline-none focus:border-[#0A1931] bg-transparent" required/>
-                <input type="password" value={authForm.password} onChange={e=>setAuthForm(p=>({...p, password:e.target.value}))} placeholder="비밀번호 4자리" maxLength={4} className="w-full p-4 border-b border-gray-300 text-[15px] outline-none focus:border-[#0A1931] bg-transparent" required/>
-                <button type="submit" className="w-full bg-[#0A1931] text-white py-4 font-bold text-[15px] mt-6 tracking-wide">검색하기</button>
-              </form>
-            ) : myEntries.length === 0 ? <div className="text-center py-10 text-gray-500">일치하는 내역이 없습니다.</div> : (
-              <div className="space-y-6 max-h-[60vh] overflow-y-auto">
-                {myEntries.map(ent => (
-                  <div key={ent.id} className="pb-6 border-b border-gray-200">
-                    {editTarget?.id === ent.id ? (
-                      <div>
-                        {/* ★ 미리보기 UI 추가됨 */}
-                        <div className="mb-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
-                           <h4 className="text-[11px] font-bold text-gray-500 mb-3 text-center tracking-wide">내 카피 수정 가상 적용 미리보기</h4>
-                           <BookCoverPreviewUI content={editContent} />
-                        </div>
-                        <textarea value={editContent} onChange={e=>setEditContent(e.target.value)} maxLength={30} rows={2} className="w-full p-4 border border-gray-300 text-[14px] resize-none outline-none focus:border-[#0A1931]" />
-                        <div className="flex justify-end gap-3 mt-3">
-                          <button onClick={()=>setEditTarget(null)} className="text-[13px] font-bold text-gray-500">취소</button>
-                          <button onClick={handleUpdate} className="text-[13px] font-bold text-[#0A1931]">저장</button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div>
-                        <p className="text-[15px] font-medium text-gray-900 break-keep leading-relaxed whitespace-pre-wrap">{ent.content}</p>
-                        <div className="flex justify-between items-center mt-4">
-                          <span className="text-[12px] text-gray-400">추천수 {ent.likes}</span>
-                          <div className="flex gap-4">
-                            <button onClick={()=>{setEditTarget(ent); setEditContent(ent.content);}} className="text-[12px] font-bold text-gray-500 hover:text-[#0A1931]">수정</button>
-                            <button onClick={()=>handleDelete(ent.id)} className="text-[12px] font-bold text-gray-500 hover:text-red-600">삭제</button>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
         </div>
       );
     }
