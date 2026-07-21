@@ -408,7 +408,7 @@
     // ==========================================
     function HomeView({ setView, entries, toggleLike, trackStoreClick }) {
       useReveal(); 
-      const images = [{ id: 1, src: "001.jpg" }, { id: 2, src: "002.jpg" }, { id: 3, src: "003.jpg" }];
+      const images = [{ id: 1, src: "001.png" }, { id: 2, src: "002.png" }, { id: 3, src: "003.png" }, { id: 4, src: "004.png" }];
       const [currentSlide, setCurrentSlide] = useState(0);
       const [isDragging, setIsDragging] = useState(false);
       const [dragOffset, setDragOffset] = useState(0);
@@ -1013,7 +1013,11 @@
       const handleMove = (clientX) => {
         if (!isDragging.current) return;
         const diff = clientX - startX.current;
-        setRotation(currentRotation.current + diff * 0.5); 
+        
+        // 민감도 조절(* 0.5)을 유지한 상태로, 0도(앞표지) ~ 180도(뒷표지)까지만 돌게 고정
+        const newRotation = Math.max(0, Math.min(180, currentRotation.current + diff * 0.5));
+        
+        setRotation(newRotation);
       };
 
       const handleEnd = () => {
@@ -1024,7 +1028,8 @@
         <div className="px-6 py-10 animate-in fade-in duration-500">
           <h2 className="text-[20px] font-bold text-[#0A1931] tracking-tight mb-8 pb-4 border-b border-gray-100 reveal">도서 안내</h2>
           
-          <div className="border border-gray-100 mb-10 bg-white reveal overflow-hidden">
+          <div className="border-y border-gray-100 mb-10 bg-white reveal overflow-hidden -mx-6">
+             {/* 3D 책 회전 영역 */}
              <div 
                 className="w-full py-12 bg-gradient-to-b from-[#e6f4f1] to-[#fde2e4] flex flex-col items-center justify-center cursor-grab active:cursor-grabbing rounded-t-lg"
                 onMouseDown={(e) => handleStart(e.clientX)}
@@ -1048,7 +1053,7 @@
 
              <div className="p-8 text-center mt-4">
                 <h3 className="font-bold text-[17px] text-[#0A1931] mb-3 tracking-tight">천재 물리학자가 평생 숨겨 온 비밀!</h3>
-                <p className="text-[14px] text-gray-600 leading-relaxed font-medium break-keep">"유카와 마나부, 너의 죄를 사하노라!"<br/><br/>갈릴레오 시리즈 최신작. 더욱 깊어진 미스터리와 감동이 소용돌이치는 걸작. 얽히고설킨 혈연과 인연의 비밀 속으로 초대합니다.</p>
+                <p className="text-[14px] text-gray-600 leading-relaxed font-medium break-keep">"유카와 마나부, 너의 죄를 사하노라!"<br/><br/>갈릴레오 시리즈 최신작.<br/>더욱 깊어진 미스터리와 감동이 소용돌이치는 걸작.<br/>얽히고설킨 혈연과 인연의 비밀 속으로 초대합니다.</p>
              </div>
           </div>
           
