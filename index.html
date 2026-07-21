@@ -625,19 +625,28 @@
           <div className="reveal">
             <h3 className="font-bold text-[14px] text-gray-500 mb-4 tracking-wide uppercase">공모전 당선 경품</h3>
             <div className="flex flex-col border-t border-gray-100 mb-8">
+              
               <div className="py-5 border-b border-gray-100 flex items-start gap-4">
-                <span className="font-bold text-[#0A1931] shrink-0 min-w-[55px] leading-snug">[대상<br/>1명]</span>
+                {/* ★ 색상 통일 및 1줄 처리, 볼드/일반체 분리 */}
+                <div className="shrink-0 min-w-[75px] text-[#0A1931] leading-snug pt-0.5">
+                  <span className="font-bold">대상</span> <span className="font-normal text-[13px]">1명</span>
+                </div>
                 <div className="flex-1">
-                  <p className="font-bold text-gray-900 mb-1 leading-snug">소설의 주요 배경지<br/>'일본 니가타' 왕복 항공권(1인 2매)</p>
+                  <p className="font-bold text-gray-900 mb-1 leading-snug">소설의 주요 배경지 '일본 니가타' 왕복 항공권(1인 2매)</p>
                   <p className="text-[12px] text-gray-500 leading-relaxed break-keep">* (제세공과금 22% 본인 부담)</p>
                 </div>
               </div>
+              
               <div className="py-5 border-b border-gray-100 flex items-start gap-4">
-                <span className="font-bold text-gray-400 shrink-0 min-w-[55px] leading-snug">[우수상<br/>10명]</span>
+                {/* ★ 색상 통일 및 1줄 처리, 볼드/일반체 분리 */}
+                <div className="shrink-0 min-w-[75px] text-[#0A1931] leading-snug pt-0.5">
+                  <span className="font-bold">우수상</span> <span className="font-normal text-[13px]">10명</span>
+                </div>
                 <div className="flex-1">
-                  <p className="font-bold text-gray-800 leading-snug mt-1">배달의민족 상품권(5만 원)</p>
+                  <p className="font-bold text-gray-800 leading-snug">배달의민족 상품권(5만 원)</p>
                 </div>
               </div>
+              
             </div>
 
             <div className="bg-gray-50 p-4 rounded-xl text-[13px] text-gray-700 leading-relaxed mb-8">
