@@ -94,7 +94,6 @@
       width: 30px; /* 책 두께 */
       height: 100%;
       background-image: url('book_02.jpg');
-      /* 변경됨: translateZ(15px)를 제거하여 표지와 딱 맞물리게 수정 */
       transform: rotateY(-90deg); 
       left: -15px; 
     }
@@ -121,7 +120,6 @@
     import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, setDoc, increment, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
-    // ★ 리스트 애니메이션을 위한 라이브러리 추가
     import autoAnimate from "https://cdn.jsdelivr.net/npm/@formkit/auto-animate@0.8.2/+esm";
 
     const { useState, useEffect, useRef, useMemo, useCallback } = React;
@@ -147,7 +145,6 @@
     const db = getFirestore(app);
     const appId = typeof __app_id !== 'undefined' ? __app_id : 'event-helix-official';
     
-    // 부적절 금지어 사전 (완벽 필터링)
     const RAW_BAD_WORDS = ['일베', '개새끼', '개새기', '시발럼', '씨발', '좆', '조까', '좆까', '시팔', '씨팔', '썅놈', 'nigger', '오줌', 'ㅅㅂㄹ', 'ㅅㅂㄴ', 'ㅅㅂ', 'ㅅㅍ', '씹새끼', '씹놈', '병신', '등신', '븅신', '미췬넘', '호로새끼', ' 시발새끼', '181819', '븅딱', '애미', '애미나이', '자지', '보지', '꼬추', '똥꼬', '섹스', 'sex', '성행위', '족까', '좃', '시1발', '씨1발', '씨1팔', '좆1까', '미1친', '노무노무', '노무', '젖', '유방', '이기야', '창녀', '창년', '아가리', '떡치', 'x끼', 'x발', 'x팔', '뒤져라', '응디', '쓰벌', '좌빨', '극우', '베충', '종북', '내란', '국힘', '민주당', '이재명', '재매이햄', '문재앙', '문재인', '이명박', '박근혜', ' 박정희', '전두환', '전땅크', 'ㅈ같이', '음란', '대깨문', '조센징', '쪽빠리', '쪽빨이', '조센진', '왜놈', '양키', '흑형', '니거', '성폭행', '성추행', '강간', '윤간', '공산당', '존나', 'ㅈㄴ', '틀딱', '돼지년', '짭새', '쥐박이', '지랄', '쥐랄', '짱깨', '성괴', '젼나', '쑤레기', '18년'];
     const BAD_WORDS = RAW_BAD_WORDS.map(word => word.trim());
 
@@ -156,7 +153,6 @@
       const paths = {
         play: <path d="M8 5v14l11-7z" fill="currentColor" stroke="none" />,
         pause: <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" fill="currentColor" stroke="none" />,
-        
         menu: <><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></>,
         x: <><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>,
         heart: <><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/></>,
@@ -170,7 +166,8 @@
         chevronsLeft: <><path d="m11 17-5-5 5-5"/><path d="m18 17-5-5 5-5"/></>,
         chevronsRight: <><path d="m6 17 5-5-5-5"/><path d="m13 17 5-5-5-5"/></>,
         alertCircle: <><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></>,
-        eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>
+        eye: <><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></>,
+        eyeOff: <><path d="M9.88 9.88a3 3 0 1 0 4.24 4.24"/><path d="M10.73 5.08A10.43 10.43 0 0 1 12 5c7 0 10 7 10 7a13.16 13.16 0 0 1-1.67 2.68"/><path d="M6.61 6.61A13.526 13.526 0 0 0 2 12s3 7 10 7a9.74 9.74 0 0 0 5.39-1.61"/><line x1="2" x2="22" y1="2" y2="22"/></>
       };
 
       return (
@@ -208,72 +205,18 @@
           
           <div 
             className="absolute flex items-center justify-center px-1"
-            style={{
-              top: '75%', 
-              left: '4.5%', 
-              width: '90.6%', 
-              height: '12.2%'
-            }}
+            style={{ top: '75%', left: '4.5%', width: '90.6%', height: '12.2%' }}
           >
             <p 
               className="font-black text-center leading-[1.4] tracking-tight whitespace-pre-wrap w-full"
               style={{
-                fontFamily: "'Noto Serif KR', serif", 
-                color: '#0A1931', 
-                wordBreak: 'keep-all', 
+                fontFamily: "'Noto Serif KR', serif", color: '#0A1931', wordBreak: 'keep-all', 
                 fontSize: content?.length > 16 || content?.includes('\n') ? '12px' : '14px',
                 fontWeight: 900 
               }}
             >
               {content || "이곳에 띠지 카피가 노출됩니다."}
             </p>
-          </div>
-        </div>
-      );
-    }
-
-    // --- 3D 책 회전 컴포넌트 ---
-    function Book3D() {
-      const [rotation, setRotation] = useState(0);
-      const isDragging = useRef(false);
-      const startX = useRef(0);
-      const currentRotation = useRef(0);
-
-      const handleStart = (clientX) => {
-        isDragging.current = true;
-        startX.current = clientX;
-        currentRotation.current = rotation;
-      };
-
-      const handleMove = (clientX) => {
-        if (!isDragging.current) return;
-        const diff = clientX - startX.current;
-        setRotation(currentRotation.current + diff * 0.5);
-      };
-
-      const handleEnd = () => {
-        isDragging.current = false;
-      };
-
-      return (
-        <div 
-          className="w-full py-12 bg-gradient-to-b from-[#e6f4f1] to-[#fde2e4] flex flex-col items-center justify-center cursor-grab active:cursor-grabbing rounded-t-lg"
-          onMouseDown={(e) => handleStart(e.clientX)}
-          onMouseMove={(e) => handleMove(e.clientX)}
-          onMouseUp={handleEnd}
-          onMouseLeave={handleEnd}
-          onTouchStart={(e) => handleStart(e.touches[0].clientX)}
-          onTouchMove={(e) => handleMove(e.touches[0].clientX)}
-          onTouchEnd={handleEnd}
-        >
-          <div className="text-[11px] text-[#0A1931] font-bold mb-8 bg-white/50 px-3 py-1 rounded-full animate-pulse shadow-sm">👈 좌우로 드래그하여 책을 돌려보세요 👉</div>
-          
-          <div className="book-container">
-            <div className="book" style={{ transform: `rotateY(${rotation}deg)` }}>
-              <div className="book-face book-front"></div>
-              <div className="book-face book-back"></div>
-              <div className="book-face book-spine"></div>
-            </div>
           </div>
         </div>
       );
@@ -305,7 +248,6 @@
 
       useEffect(() => {
         if (!user) return;
-        // 변경: 전체 데이터를 다 가져오지 않고, 최신 작성일 기준 최대 500건만 가져오도록 제한 (비용/성능 최적화)
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'helix_entries');
         const q = query(entriesRef, orderBy("createdAt", "desc"), limit(500));
         
@@ -444,9 +386,7 @@
       const listRef = useRef(null);
 
       useEffect(() => {
-        if (listRef.current) {
-          autoAnimate(listRef.current, { duration: 300, easing: 'ease-in-out' });
-        }
+        if (listRef.current) autoAnimate(listRef.current, { duration: 300, easing: 'ease-in-out' });
       }, []);
 
       const startAutoPlay = useCallback(() => {
@@ -482,85 +422,60 @@
         startAutoPlay();
       };
 
-      // [수정된 부분] 추천순 정렬 시 순서(ID)는 고정하되, 좋아요 숫자는 실시간 반영
       const [frozenIds, setFrozenIds] = useState(null);
 
       useEffect(() => {
         if (sortType === 'likes') {
-          // 추천순 탭을 눌렀고, 아직 순서가 고정되지 않았다면 현재 순서의 ID만 추출해서 고정
           if (frozenIds === null && entries.length > 0) {
+            // ★ 수정: isBlinded 처리된 항목 필터링 추가
             const sorted = [...entries]
-              .filter(e => (e.reports || 0) < 10)
+              .filter(e => (e.reports || 0) < 10 && !e.isBlinded)
               .sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt)
               .slice(0, 5);
             setFrozenIds(sorted.map(e => e.id));
           }
         } else {
-          // 최신순일 때는 고정 해제
           setFrozenIds(null);
         }
       }, [sortType, entries, frozenIds]); 
 
       const topEntries = useMemo(() => {
-        const validEntries = [...entries].filter(e => (e.reports || 0) < 10);
+        // ★ 수정: isBlinded 처리된 항목 필터링 추가
+        const validEntries = [...entries].filter(e => (e.reports || 0) < 10 && !e.isBlinded);
         
         if (sortType === 'likes' && frozenIds !== null) {
-          // 고정된 ID 배열을 바탕으로 껍데기를 세우고, 알맹이(최신 데이터)를 채워 넣음
           const entryMap = new Map(validEntries.map(e => [e.id, e]));
           return frozenIds.map(id => entryMap.get(id)).filter(Boolean);
         }
         
-        // 최신순일 때는 실시간 데이터 그대로 순서 정렬 반영
         return validEntries.sort((a, b) => b.createdAt - a.createdAt).slice(0, 5);
       }, [entries, sortType, frozenIds]);
 
       return (
         <div className="animate-in fade-in duration-500">
-          
           <div className="relative w-full aspect-square overflow-hidden bg-gray-100 border-b border-gray-100"
                onMouseDown={onDragStart} onMouseMove={onDragMove} onMouseUp={onDragEnd} onMouseLeave={onDragEnd}
                onTouchStart={onDragStart} onTouchMove={onDragMove} onTouchEnd={onDragEnd} style={{ touchAction: 'pan-y' }}>
             <div className="flex h-full w-full will-change-transform" style={{ transform: `translateX(calc(-${currentSlide * 100}% + ${dragOffset}px))`, transition: isDragging ? 'none' : 'transform 0.5s cubic-bezier(0.25, 1, 0.5, 1)' }}>
               {images.map((img, idx) => (
                 <div key={img.id} className="w-full h-full flex-shrink-0 relative select-none bg-[#0A1931]">
-                  <img 
-                    src={img.src} 
-                    alt={`배너 ${idx + 1}`} 
-                    className="w-full h-full object-cover pointer-events-none" 
-                    onError={(e) => { e.target.style.display='none'; }} 
-                    style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitFontSmoothing: 'antialiased' }} 
-                  />
+                  <img src={img.src} alt={`배너 ${idx + 1}`} className="w-full h-full object-cover pointer-events-none" onError={(e) => { e.target.style.display='none'; }} style={{ transform: 'translateZ(0)', backfaceVisibility: 'hidden', WebkitFontSmoothing: 'antialiased' }} />
                 </div>
               ))}
             </div>
             
             <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-3 z-20">
-              <button 
-                onClick={() => setIsPaused(!isPaused)} 
-                className="w-6 h-6 flex justify-center items-center text-white/70 hover:text-white transition-colors"
-              >
-                <Icon name={isPaused ? "play" : "pause"} size={16} />
-              </button>
-              
+              <button onClick={() => setIsPaused(!isPaused)} className="w-6 h-6 flex justify-center items-center text-white/70 hover:text-white transition-colors"><Icon name={isPaused ? "play" : "pause"} size={16} /></button>
               <div className="flex gap-2 items-center">
                 {images.map((_, idx) => (
-                  <button 
-                    key={idx} 
-                    onClick={() => { 
-                      setCurrentSlide(idx); 
-                      setIsPaused(true); 
-                    }} 
-                    className={`transition-all duration-300 rounded-full ${idx === currentSlide ? 'w-2 h-2 bg-white' : 'w-2 h-2 bg-white/50'}`} 
-                  />
+                  <button key={idx} onClick={() => { setCurrentSlide(idx); setIsPaused(true); }} className={`transition-all duration-300 rounded-full ${idx === currentSlide ? 'w-2 h-2 bg-white' : 'w-2 h-2 bg-white/50'}`} />
                 ))}
               </div>
             </div>
           </div>
           
           <div className="px-6 py-6 border-b border-gray-100 bg-white">
-            <button onClick={() => setView('participate')} className="w-full bg-[#0A1931] text-white py-4 rounded-full font-bold text-[15px] shadow-md hover:bg-[#1a2c4e] hover:shadow-lg smooth-transition tracking-wide">
-              이벤트 응모하기
-            </button>
+            <button onClick={() => setView('participate')} className="w-full bg-[#0A1931] text-white py-4 rounded-full font-bold text-[15px] shadow-md hover:bg-[#1a2c4e] hover:shadow-lg smooth-transition tracking-wide">이벤트 응모하기</button>
           </div>
 
           <div className="px-6 py-10 border-b border-gray-100 bg-white reveal">
@@ -579,13 +494,7 @@
                 <div className="text-center text-sm text-gray-400 py-12">아직 응모작이 없습니다.</div>
               ) : (
                 topEntries.map((entry) => (
-                  <EntryRow 
-                    key={entry.id} 
-                    entry={entry} 
-                    toggleLike={toggleLike} 
-                    rank={null}
-                    onPreview={(content) => setPreviewModalContent(content)} 
-                  />
+                  <EntryRow key={entry.id} entry={entry} toggleLike={toggleLike} rank={null} onPreview={(content) => setPreviewModalContent(content)} />
                 ))
               )}
             </div>
@@ -609,7 +518,6 @@
               </div>
             </div>
           )}
-
         </div>
       );
     }
@@ -631,7 +539,6 @@
               ‘나는 이 책을 이렇게 말하고 싶다!’<br/>
               띠지 카피 공모전에 많은 관심과 참여를 부탁드립니다.<br/><br/>
               
-              {/* 아래 span 태그로 두 문장을 묶어서 작고 회색으로 변경했습니다 */}
               <span className="text-[12px] text-gray-500 block space-y-1">
                 <span className="block">* 반드시 연락 가능한 이메일 주소로만 응모해 주세요.</span>
                 <span className="block">* 당첨자 정보 취합 시, 중복 당첨이 확인될 경우 상위 경품 1개만 지급됩니다.</span>
@@ -710,7 +617,7 @@
     }
 
     // ==========================================
-    // 내 글 찾기 모달 컴포넌트 (수정 및 미리보기 기능 복구됨)
+    // 내 글 찾기 모달 컴포넌트
     // ==========================================
     function MyPostModal({ entries, onClose }) {
       const [email, setEmail] = useState('');
@@ -718,7 +625,6 @@
       const [myEntry, setMyEntry] = useState(null);
       const [searchStatus, setSearchStatus] = useState('');
       
-      // 수정 모드 관련 상태
       const [isEditing, setIsEditing] = useState(false);
       const [editContent, setEditContent] = useState('');
       const [isUpdating, setIsUpdating] = useState(false);
@@ -727,7 +633,7 @@
         const found = entries.find(e => e.email === email && e.password === password);
         if (found) {
           setMyEntry(found);
-          setEditContent(found.content); // 수정용 데이터 초기화
+          setEditContent(found.content);
           setIsEditing(false);
           setSearchStatus('');
         } else {
@@ -757,7 +663,7 @@
           });
           alert("수정되었습니다.");
           setMyEntry(prev => ({ ...prev, content: editContent.trim() }));
-          setIsEditing(false); // 수정 완료 후 다시 조회 화면으로
+          setIsEditing(false); 
         } catch(e) { 
           console.error(e); 
           alert("수정 중 오류가 발생했습니다."); 
@@ -774,7 +680,6 @@
             </h3>
             
             {!myEntry ? (
-              // 1. 검색 폼
               <div className="space-y-4">
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="응모한 이메일 주소" className="w-full p-3 bg-gray-50 border border-gray-200 text-sm outline-none focus:border-[#0A1931] rounded-lg" />
                 <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="비밀번호 숫자 4자리" maxLength="4" className="w-full p-3 bg-gray-50 border border-gray-200 text-sm outline-none focus:border-[#0A1931] tracking-widest text-center rounded-lg" />
@@ -782,40 +687,24 @@
                 {searchStatus && <p className="text-red-500 text-[11px] text-center mt-2">{searchStatus}</p>}
               </div>
             ) : isEditing ? (
-              // 2. 수정 모드 화면
               <div className="animate-in fade-in space-y-5 pb-2">
                 <div>
                   <div className="flex justify-between items-end mb-2">
                     <label className="block text-[12px] font-bold text-gray-800">카피 수정 <span className="text-gray-400 font-normal ml-1">(최대 2행)</span></label>
                     <span className={`text-[11px] font-bold ${editContent.length >= 30 ? 'text-red-500' : 'text-gray-400'}`}>{editContent.length} / 30자</span>
                   </div>
-                  <textarea 
-                    value={editContent} 
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      if (val.length > 30) return;
-                      if (val.split('\n').length > 2) return;
-                      setEditContent(val);
-                    }} 
-                    placeholder="수정할 내용을 입력해주세요." 
-                    rows="3" 
-                    className="w-full p-3 bg-gray-50 border border-gray-200 text-[14px] outline-none focus:border-[#0A1931] rounded-lg resize-none" 
-                  />
+                  <textarea value={editContent} onChange={(e) => { const val = e.target.value; if (val.length > 30) return; if (val.split('\n').length > 2) return; setEditContent(val); }} placeholder="수정할 내용을 입력해주세요." rows="3" className="w-full p-3 bg-gray-50 border border-gray-200 text-[14px] outline-none focus:border-[#0A1931] rounded-lg resize-none" />
                 </div>
-
-                {/* 가상 적용 미리보기 컴포넌트 */}
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
                   <h4 className="text-[11px] font-bold text-gray-500 mb-3 text-center">가상 적용 미리보기</h4>
                   <BookCoverPreviewUI content={editContent} />
                 </div>
-
                 <div className="flex gap-2 mt-2">
                   <button onClick={() => setIsEditing(false)} className="flex-1 bg-gray-100 text-gray-600 py-3 font-bold text-[13px] rounded-lg border border-gray-200 hover:bg-gray-200 smooth-transition">취소</button>
                   <button onClick={handleMyPostUpdate} disabled={isUpdating} className="flex-1 bg-[#0A1931] text-white py-3 font-bold text-[13px] rounded-lg disabled:opacity-50 hover:bg-[#1a2c4e] smooth-transition">{isUpdating ? '저장 중..' : '수정 완료'}</button>
                 </div>
               </div>
             ) : (
-              // 3. 조회 완료 화면 (수정/삭제 선택)
               <div className="animate-in fade-in">
                 <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-4">
                   <div className="text-[11px] font-bold text-gray-500 mb-2">응모한 카피</div>
@@ -886,8 +775,9 @@
         setLoading(true);
         try {
           await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'helix_entries'), {
-            uid: user.uid, // <--- ★ 이 줄이 추가되었습니다!
-            nickname: form.nickname.trim(), email: form.email.trim(), password: form.password, content: form.content.trim(), likes: 0, reports: 0, createdAt: Date.now()
+            uid: user.uid,
+            nickname: form.nickname.trim(), email: form.email.trim(), password: form.password, content: form.content.trim(), likes: 0, reports: 0, createdAt: Date.now(),
+            isBlinded: false // ★ 필드 초기화(옵션)
           });
           setForm({ nickname: '', email: '', password: '', content: '' });
           alert("응모가 완료되었습니다!");
@@ -977,22 +867,20 @@
       const listRef = useRef(null);
 
       useEffect(() => {
-        if (listRef.current) {
-          autoAnimate(listRef.current, { duration: 300, easing: 'ease-in-out' });
-        }
+        if (listRef.current) autoAnimate(listRef.current, { duration: 300, easing: 'ease-in-out' });
       }, []);
       
       const itemsPerPage = 10;
       const pagesPerBlock = 5; 
       
-      // [수정된 부분] 추천순 정렬 시 순서(ID)는 고정하되, 좋아요 숫자는 실시간 반영 (전체 리스트용)
       const [frozenIds, setFrozenIds] = useState(null);
 
       useEffect(() => {
         if (sortType === 'likes') {
           if (frozenIds === null && entries.length > 0) {
+            // ★ 수정: isBlinded 항목 필터링 적용
             const sorted = [...entries]
-              .filter(e => (e.reports || 0) < 10)
+              .filter(e => (e.reports || 0) < 10 && !e.isBlinded)
               .sort((a, b) => b.likes - a.likes || b.createdAt - a.createdAt);
             setFrozenIds(sorted.map(e => e.id));
           }
@@ -1002,15 +890,14 @@
       }, [sortType, entries, frozenIds]);
 
       const sortedEntries = useMemo(() => {
-        const validEntries = [...entries].filter(e => (e.reports || 0) < 10);
+        // ★ 수정: isBlinded 항목 필터링 적용
+        const validEntries = [...entries].filter(e => (e.reports || 0) < 10 && !e.isBlinded);
         
         if (sortType === 'likes' && frozenIds !== null) {
-          // 고정된 ID 순서를 바탕으로 최신 좋아요 데이터를 가져옴
           const entryMap = new Map(validEntries.map(e => [e.id, e]));
           return frozenIds.map(id => entryMap.get(id)).filter(Boolean);
         } 
         
-        // 최신순일 때는 실시간 정렬
         return validEntries.sort((a, b) => b.createdAt - a.createdAt);
       }, [entries, sortType, frozenIds]);
 
@@ -1039,14 +926,8 @@
           <div className="bg-gray-50 p-4 rounded-xl mb-6 flex items-start gap-2.5 reveal border border-gray-100">
              <Icon name="alertCircle" size={14} className="text-gray-400 shrink-0 mt-0.5" />
              <div className="text-[11px] text-gray-500 font-medium leading-relaxed space-y-1.5 tracking-tight break-keep flex-1">
-               <div className="flex items-start">
-                 <span className="mr-1.5">•</span>
-                 <span>부적절한 응모작은 사전 통보 없이 블라인드/삭제될 수 있습니다.</span>
-               </div>
-               <div className="flex items-start">
-                 <span className="mr-1.5">•</span>
-                 <span>응모작의 추천 수는 수상작 선정의 절대적 기준이 아니며, 심사 시 참고 자료로 활용됩니다.</span>
-               </div>
+               <div className="flex items-start"><span className="mr-1.5">•</span><span>부적절한 응모작은 사전 통보 없이 블라인드/삭제될 수 있습니다.</span></div>
+               <div className="flex items-start"><span className="mr-1.5">•</span><span>응모작의 추천 수는 수상작 선정의 절대적 기준이 아니며, 심사 시 참고 자료로 활용됩니다.</span></div>
              </div>
           </div>
 
@@ -1058,13 +939,7 @@
           <div ref={listRef} className="flex flex-col mb-10 border-b border-gray-100 reveal">
             {currentItems.length === 0 ? <div className="text-center text-sm text-gray-400 py-16">작성된 글이 없습니다.</div>
               : currentItems.map((entry) => (
-                  <EntryRow 
-                    key={entry.id} 
-                    entry={entry} 
-                    toggleLike={toggleLike} 
-                    rank={null}
-                    onPreview={(content) => setPreviewModalContent(content)} 
-                  />
+                  <EntryRow key={entry.id} entry={entry} toggleLike={toggleLike} rank={null} onPreview={(content) => setPreviewModalContent(content)} />
                 ))
             }
           </div>
@@ -1174,24 +1049,13 @@
       const startX = useRef(0);
       const currentRotation = useRef(0);
 
-      const handleStart = (clientX) => {
-        isDragging.current = true;
-        startX.current = clientX;
-        currentRotation.current = rotation;
-      };
-
+      const handleStart = (clientX) => { isDragging.current = true; startX.current = clientX; currentRotation.current = rotation; };
       const handleMove = (clientX) => {
         if (!isDragging.current) return;
         const diff = clientX - startX.current;
-        
-        const newRotation = Math.max(0, Math.min(180, currentRotation.current + diff * 0.5));
-        
-        setRotation(newRotation);
+        setRotation(Math.max(0, Math.min(180, currentRotation.current + diff * 0.5)));
       };
-
-      const handleEnd = () => {
-        isDragging.current = false;
-      };
+      const handleEnd = () => { isDragging.current = false; };
 
       return (
         <div className="px-6 py-10 animate-in fade-in duration-500">
@@ -1200,16 +1064,10 @@
           <div className="border-y border-gray-100 mb-10 bg-white reveal overflow-hidden -mx-6">
              <div 
                 className="w-full py-12 bg-gradient-to-b from-[#e6f4f1] to-[#fde2e4] flex flex-col items-center justify-center cursor-grab active:cursor-grabbing rounded-t-lg"
-                onMouseDown={(e) => handleStart(e.clientX)}
-                onMouseMove={(e) => handleMove(e.clientX)}
-                onMouseUp={handleEnd}
-                onMouseLeave={handleEnd}
-                onTouchStart={(e) => handleStart(e.touches[0].clientX)}
-                onTouchMove={(e) => handleMove(e.touches[0].clientX)}
-                onTouchEnd={handleEnd}
+                onMouseDown={(e) => handleStart(e.clientX)} onMouseMove={(e) => handleMove(e.clientX)} onMouseUp={handleEnd} onMouseLeave={handleEnd}
+                onTouchStart={(e) => handleStart(e.touches[0].clientX)} onTouchMove={(e) => handleMove(e.touches[0].clientX)} onTouchEnd={handleEnd}
              >
                 <div className="text-[11px] text-[#0A1931] font-bold mb-8 bg-white/50 px-3 py-1 rounded-full animate-pulse shadow-sm">👈 좌우로 드래그하여 책을 돌려보세요 👉</div>
-                
                 <div className="book-container">
                   <div className="book" style={{ transform: `rotateY(${rotation}deg)` }}>
                     <div className="book-face book-front"></div>
@@ -1218,7 +1076,6 @@
                   </div>
                 </div>
              </div>
-
              <div className="p-8 text-center mt-4">
                 <h3 className="font-bold text-[17px] text-[#0A1931] mb-3 tracking-tight">천재 물리학자가 평생 숨겨 온 비밀!</h3>
                 <p className="text-[14px] text-gray-600 leading-relaxed font-medium break-keep">"유카와 마나부, 너의 죄를 사하노라!"<br/><br/>갈릴레오 시리즈 최신작.<br/>더욱 깊어진 미스터리와 감동이 소용돌이치는 걸작.<br/>얽히고설킨 혈연과 인연의 비밀 속으로 초대합니다.</p>
@@ -1246,12 +1103,9 @@
 
       const handleLogin = async () => {
         try {
-          // 파이어베이스 이메일 로그인 시도
           await signInWithEmailAndPassword(auth, emailInput, passwordInput);
           setIsAdminAuth(true);
-        } catch (error) {
-          alert('관리자 계정 정보가 일치하지 않습니다.');
-        }
+        } catch (error) { alert('관리자 계정 정보가 일치하지 않습니다.'); }
       };
 
       if (!isAdminAuth) {
@@ -1273,11 +1127,20 @@
       const [adminSort, setAdminSort] = useState('recent'); 
       const [storeClicks, setStoreClicks] = useState({ kyobo: 0, aladin: 0, yes24: 0 });
       
+      // ★ 수정: 관리자 필터 조건 (최신순, 추천순, 신고글, 블라인드글)
       const sorted = useMemo(() => {
-        const arr = [...entries];
-        if (adminSort === 'likes') arr.sort((a,b) => b.likes - a.likes);
-        else if (adminSort === 'recent') arr.sort((a,b) => b.createdAt - a.createdAt);
-        else if (adminSort === 'reports') arr.sort((a,b) => (b.reports || 0) - (a.reports || 0));
+        let arr = [...entries];
+        if (adminSort === 'recent') {
+          arr.sort((a,b) => b.createdAt - a.createdAt);
+        } else if (adminSort === 'likes') {
+          arr.sort((a,b) => b.likes - a.likes);
+        } else if (adminSort === 'reports') {
+          // 신고 수가 1 이상인 글만 모아보기
+          arr = arr.filter(e => (e.reports || 0) > 0).sort((a,b) => (b.reports || 0) - (a.reports || 0));
+        } else if (adminSort === 'blinded') {
+          // 블라인드된 글만 모아보기
+          arr = arr.filter(e => e.isBlinded).sort((a,b) => b.createdAt - a.createdAt);
+        }
         return arr;
       }, [entries, adminSort]);
 
@@ -1288,11 +1151,7 @@
         const metricsRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_metrics', 'store_clicks');
         const unsub = onSnapshot(metricsRef, (docSnap) => {
           if (docSnap.exists()) {
-            setStoreClicks({
-              kyobo: docSnap.data().kyobo || 0,
-              aladin: docSnap.data().aladin || 0,
-              yes24: docSnap.data().yes24 || 0
-            });
+            setStoreClicks({ kyobo: docSnap.data().kyobo || 0, aladin: docSnap.data().aladin || 0, yes24: docSnap.data().yes24 || 0 });
           }
         }, (error) => console.error("Metrics fetch error:", error));
         return () => unsub();
@@ -1313,6 +1172,17 @@
         }
       };
 
+      // ★ 추가: 수동 블라인드 처리 및 해제 함수
+      const toggleBlind = async (id, isCurrentlyBlinded) => {
+        if(window.confirm(isCurrentlyBlinded ? "블라인드 처리를 해제하여 일반 유저들에게 다시 노출하시겠습니까?" : "이 글을 블라인드 처리하여 숨기시겠습니까?")) {
+          try {
+            await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', id), { 
+              isBlinded: !isCurrentlyBlinded 
+            });
+          } catch(e) { console.error("Blind toggle failed:", e); }
+        }
+      };
+
       const manualBan = async () => {
         if(!banInput.includes('@')) return alert('이메일 형식 확인');
         await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'helix_banned'), { email: banInput, bannedAt: Date.now(), type: 'manual' });
@@ -1327,8 +1197,8 @@
       };
 
       const exportCSV = () => {
-        const headers = ['순위', '닉네임', '이메일', '공감수', '신고누적수', '카피내용', '작성일시'];
-        const rows = sorted.map((e, idx) => [idx + 1, e.nickname, e.email, e.likes || 0, e.reports || 0, `"${e.content.replace(/"/g, '""')}"`, new Date(e.createdAt).toLocaleString()]);
+        const headers = ['순위', '닉네임', '이메일', '공감수', '신고누적수', '블라인드여부', '카피내용', '작성일시'];
+        const rows = sorted.map((e, idx) => [idx + 1, e.nickname, e.email, e.likes || 0, e.reports || 0, e.isBlinded ? 'O' : 'X', `"${e.content.replace(/"/g, '""')}"`, new Date(e.createdAt).toLocaleString()]);
         const csvContent = '\uFEFF' + [headers, ...rows].map(e => e.join(",")).join("\n"); 
         const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
         const link = document.createElement("a"); link.href = URL.createObjectURL(blob);
@@ -1403,32 +1273,41 @@
           </div>
 
           <div className="space-y-4">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col gap-3 mb-4">
                <h3 className="font-bold text-[14px] text-[#0A1931]">실시간 데이터 목록</h3>
-               <div className="flex gap-2">
-                 <button onClick={() => setAdminSort('recent')} className={`text-[11px] font-bold px-2 py-1 border rounded ${adminSort==='recent' ? 'bg-[#0A1931] text-white' : 'bg-white text-gray-500'}`}>최신순</button>
-                 <button onClick={() => setAdminSort('likes')} className={`text-[11px] font-bold px-2 py-1 border rounded ${adminSort==='likes' ? 'bg-[#0A1931] text-white' : 'bg-white text-gray-500'}`}>추천순</button>
-                 <button onClick={() => setAdminSort('reports')} className={`text-[11px] font-bold px-2 py-1 border rounded ${adminSort==='reports' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-red-500 border-red-200'}`}>🚨 신고순</button>
+               {/* ★ 수정: 정렬 탭 UI 개선 및 신고글, 블라인드글 추가 */}
+               <div className="flex gap-1.5 flex-wrap">
+                 <button onClick={() => setAdminSort('recent')} className={`text-[11px] font-bold px-2.5 py-1.5 border rounded ${adminSort==='recent' ? 'bg-[#0A1931] text-white' : 'bg-white text-gray-600 border-gray-200'}`}>최신순</button>
+                 <button onClick={() => setAdminSort('likes')} className={`text-[11px] font-bold px-2.5 py-1.5 border rounded ${adminSort==='likes' ? 'bg-[#0A1931] text-white' : 'bg-white text-gray-600 border-gray-200'}`}>추천순</button>
+                 <button onClick={() => setAdminSort('reports')} className={`text-[11px] font-bold px-2.5 py-1.5 border rounded ${adminSort==='reports' ? 'bg-red-500 text-white border-red-500' : 'bg-white text-red-500 border-red-200'}`}>🚨 신고글</button>
+                 <button onClick={() => setAdminSort('blinded')} className={`text-[11px] font-bold px-2.5 py-1.5 border rounded ${adminSort==='blinded' ? 'bg-gray-800 text-white border-gray-800' : 'bg-white text-gray-600 border-gray-200'}`}>🙈 블라인드글</button>
                </div>
             </div>
 
             {sorted.map((entry, idx) => (
-              <div key={entry.id} className={`bg-white p-5 border ${entry.reports >= 10 ? 'border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.15)]' : 'border-gray-200'}`}>
+              <div key={entry.id} className={`bg-white p-5 border ${entry.isBlinded ? 'border-gray-800 shadow-sm bg-gray-50' : entry.reports >= 10 ? 'border-red-400 shadow-[0_0_15px_rgba(239,68,68,0.15)]' : 'border-gray-200'}`}>
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <span className="text-[11px] font-bold text-[#0A1931] mr-2">{idx+1}위</span>
                     <span className="font-bold text-[14px] text-gray-900">{entry.nickname}</span>
                     {entry.reports > 0 && <span className={`text-[10px] font-bold ml-2 px-1.5 py-0.5 rounded ${entry.reports >= 10 ? 'bg-red-600 text-white' : 'bg-red-50 text-red-500'}`}>🚨 신고 {entry.reports}회</span>}
+                    {/* ★ 추가: 블라인드된 글 뱃지 표시 */}
+                    {entry.isBlinded && <span className="text-[10px] font-bold ml-2 px-1.5 py-0.5 rounded bg-gray-800 text-white">🙈 블라인드 처리됨</span>}
                     <div className="text-[11px] text-gray-500 mt-1">{entry.email} (PW:{entry.password})</div>
                   </div>
                   <span className="text-[12px] font-bold text-[#0A1931] flex items-center gap-1"><Icon name="heart" size={12} fill="currentColor"/> {entry.likes}</span>
                 </div>
-                <p className="text-[14px] font-medium text-gray-800 break-keep leading-relaxed bg-gray-50 p-4 mb-4 whitespace-pre-wrap break-all">{entry.content}</p>
-                <div className="flex gap-4">
+                {/* ★ 추가: 블라인드된 글이면 배경색과 텍스트 색상을 어둡게 처리 */}
+                <p className={`text-[14px] font-medium break-keep leading-relaxed p-4 mb-4 whitespace-pre-wrap break-all ${entry.isBlinded ? 'bg-gray-200 text-gray-500' : 'bg-gray-50 text-gray-800'}`}>{entry.content}</p>
+                <div className="flex gap-3 flex-wrap">
+                  {/* ★ 추가: 블라인드 토글 버튼 */}
+                  <button onClick={() => toggleBlind(entry.id, entry.isBlinded)} className={`text-[12px] font-bold flex items-center gap-1.5 px-2 py-1 -ml-2 rounded smooth-transition ${entry.isBlinded ? 'text-gray-800 hover:bg-gray-200' : 'text-gray-500 hover:bg-gray-100 hover:text-gray-800'}`}>
+                    <Icon name={entry.isBlinded ? "eye" : "eyeOff"} size={14}/> {entry.isBlinded ? '블라인드 해제' : '블라인드 처리'}
+                  </button>
                   <button onClick={() => handleDelete(entry.id)} className="text-[12px] font-bold text-gray-500 flex items-center gap-1 hover:text-gray-900"><Icon name="trash2" size={14}/> 삭제</button>
                   <button onClick={() => handleBanAndDel(entry)} className="text-[12px] font-bold text-red-400 flex items-center gap-1 hover:text-red-600"><Icon name="ban" size={14}/> 차단+삭제</button>
                   {entry.reports >= 10 && (
-                    <button onClick={() => handleResetReport(entry.id)} className="text-[12px] font-bold text-blue-500 flex items-center gap-1 hover:text-blue-700 ml-auto">블라인드 해제(초기화)</button>
+                    <button onClick={() => handleResetReport(entry.id)} className="text-[12px] font-bold text-blue-500 flex items-center gap-1 hover:text-blue-700 ml-auto">🚨 신고 횟수 초기화</button>
                   )}
                 </div>
               </div>
