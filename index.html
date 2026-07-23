@@ -117,7 +117,7 @@
 
   <script type="text/babel" data-type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged, signInWithCustomToken, signInWithEmailAndPassword, setPersistence, inMemoryPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
     import { getFirestore, collection, onSnapshot, addDoc, updateDoc, doc, deleteDoc, setDoc, increment, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
     
     import autoAnimate from "https://cdn.jsdelivr.net/npm/@formkit/auto-animate@0.8.2/+esm";
@@ -237,6 +237,8 @@
       useEffect(() => {
         const initAuth = async () => {
           try {
+            // ★ 브라우저 저장소 대신 메모리(RAM)에 임시 로그인 정보를 보관하도록 설정
+            await setPersistence(auth, inMemoryPersistence);
             if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) await signInWithCustomToken(auth, __initial_auth_token);
             else await signInAnonymously(auth);
           } catch (error) { console.error("Auth error:", error); }
@@ -247,7 +249,7 @@
       }, []);
 
       useEffect(() => {
-        if (!user) return;
+        // ★ if (!user) return; 조건을 제거하여 접속 즉시 데이터를 불러오도록 수정
         const entriesRef = collection(db, 'artifacts', appId, 'public', 'data', 'helix_entries');
         const q = query(entriesRef, orderBy("createdAt", "desc"), limit(500));
         
@@ -261,7 +263,7 @@
         }, (error) => console.error(error));
 
         return () => { unsubEntries(); unsubBanned(); };
-      }, [user]);
+      }, []); // ★ 의존성 배열에서 [user] 제거
 
       useEffect(() => {
         const checkHash = () => { if (window.location.hash === '#admin') setCurrentView('admin'); };
