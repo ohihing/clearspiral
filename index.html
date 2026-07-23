@@ -273,7 +273,7 @@
       }, []);
 
       const toggleLike = async (id, isCurrentlyLiked) => {
-        if (!user) return;
+        // if (!user) return; 삭제됨
         const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_entries', id);
         try {
           if (isCurrentlyLiked) {
@@ -285,7 +285,7 @@
       };
 
       const trackStoreClick = async (storeName) => {
-        if (!user) return;
+        // if (!user) return; 삭제됨
         const metricsRef = doc(db, 'artifacts', appId, 'public', 'data', 'helix_metrics', 'store_clicks');
         try {
           await setDoc(metricsRef, { [storeName]: increment(1) }, { merge: true });
@@ -758,7 +758,8 @@
 
       const handleSubmit = async (e) => {
         e.preventDefault();
-        if (!user) return alert("서버 연결 대기 중입니다.");
+        // ★ if (!user) 체크 로직 삭제
+        
         if (!form.nickname || !form.email || !form.password || !form.content) return alert("모든 항목을 입력해주세요.");
         if (form.password.length !== 4 || isNaN(form.password)) return alert("비밀번호는 숫자 4자리로 입력해주세요.");
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return alert("올바른 이메일 형식을 입력해주세요.");
@@ -777,9 +778,9 @@
         setLoading(true);
         try {
           await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'helix_entries'), {
-            uid: user.uid,
+            uid: user ? user.uid : "in-app-browser", // ★ 에러 방지: user가 null일 때 임시 문자열 삽입
             nickname: form.nickname.trim(), email: form.email.trim(), password: form.password, content: form.content.trim(), likes: 0, reports: 0, createdAt: Date.now(),
-            isBlinded: false // ★ 필드 초기화(옵션)
+            isBlinded: false
           });
           setForm({ nickname: '', email: '', password: '', content: '' });
           alert("응모가 완료되었습니다!");
